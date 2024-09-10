@@ -26,5 +26,6 @@ infiltrometro = Infiltrometro(data)
 
 I = infiltrometro.I(10)
 K = infiltrometro.K()
+S = infiltrometro.S()
 
 print(K)

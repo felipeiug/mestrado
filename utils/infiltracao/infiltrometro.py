@@ -78,20 +78,72 @@ class Infiltrometro:
         (c1, c2), covariance = curve_fit(self._equation_infiltration, t, I)
         return c1, c2, covariance
 
-    def _equation_infiltration(self, t, C1, C2):
-        return C2 * np.sqrt(t) + C1*t
+    def _equation_infiltration(self, t:float, C1:np.ndarray, C2:np.ndarray):
+        return C1 * np.sqrt(t) + C2*t
+
 
     def K(self, point:str|None = None):
         """Retorna o dataframe com a condutividade hidráulica do solo, contém os pontos com cálculo"""
 
-        mask, df = self.A(point)
-        df["K_Zhang"] = self.infiltrations[mask]["C1"]/df["A_Zhang"]
-        df["K_Dohnal"] = np.where(df["A_Dohnal"].values!=None, self.infiltrations[mask]["C1"]/df["A_Dohnal"], None)
+        mask, df = self.A2(point)
+        df["K_Zhang"] = self.infiltrations[mask]["C2"]/df["A2_Zhang"]
+        df["K_Dohnal"] = np.where(df["A2_Dohnal"].values!=None, self.infiltrations[mask]["C2"]/df["A2_Dohnal"], None)
 
         return df
     
-    def A(self, point:str|None = None):
-        "Retorna uma tupla com a mascara e o dataframe com o cálculo de A para o valor da infiltração"
+    def S(self, point:str|None = None):
+        """Retorna o dataframe com a sorptividade do solo, contém os pontos com cálculo"""
+
+        mask, df = self.A1(point)
+        if df is None:
+            return None
+        
+        df["S"] = self.infiltrations[mask]["C1"]/df["A1"]
+
+        return df
+
+    def A1(self, point:str|None = None):
+        "Retorna uma tupla com a mascara e o dataframe com o cálculo de A1 para o valor da infiltração"
+
+        mask = self._mask(point)
+
+        teta0 = self.infiltrations["Theta 0"].values
+        tetai = self.infiltrations["Theta I"].values
+        mask = mask & (teta0 != None) & (tetai != None)
+
+        if not mask.any():
+            return mask, None
+        
+        teta0 = self.infiltrations[mask]["Theta 0"].values
+        tetai = self.infiltrations[mask]["Theta I"].values
+
+        soils = self.van_genuchten_parameters["soil_texture"].values
+        soil_types = self.infiltrations["Soil Type"][mask].values
+
+        indexes_soil = np.array([np.where(soils == i)[0][0] for i in soil_types])
+
+        alfa = self.van_genuchten_parameters["alfa"].values[indexes_soil]
+        n  = self.van_genuchten_parameters["n/h0"].values[indexes_soil]
+        h0 = self.infiltrations[mask]["Suction"].values
+        r0 = self.disk_diameter/2
+        b = 0.55  #(Warrick and Broadbridge, 1992)
+
+        p1 = 1.4*np.power(b, 0.5)*np.power(teta0-tetai, 0.25)
+        p2 = np.exp(3*(n-1.9)*alfa*h0)
+        den = np.power(alfa*r0, 0.15)
+        A1 = p1*p2/den
+
+        return mask, pd.DataFrame({
+            "Ponto": self.infiltrations[mask]["Ponto"],
+            "soils_type":soil_types,
+            "alfa":alfa,
+            "n":n,
+            "Suction":h0,
+            "A1":A1,
+        })
+
+    def A2(self, point:str|None = None):
+        "Retorna uma tupla com a mascara e o dataframe com o cálculo de A2 para o valor da infiltração"
 
         mask = self._mask(point)
         
@@ -101,29 +153,29 @@ class Infiltrometro:
         indexes_soil = np.array([np.where(soils == i)[0][0] for i in soil_types])
 
         alfa = self.van_genuchten_parameters["alfa"].values[indexes_soil]
-        n_h0  = self.van_genuchten_parameters["n/h0"].values[indexes_soil]
+        n  = self.van_genuchten_parameters["n/h0"].values[indexes_soil]
         h0 = self.infiltrations[mask]["Suction"].values
 
-        p1 = 11.65*(np.power(n_h0, 0.1)-1)
-        val = np.where(n_h0<1.9, 7.5, 2.92)
-        p2 = np.exp(val*(n_h0-1.9)*alfa*h0)
+        p1 = 11.65*(np.power(n, 0.1)-1)
+        val = np.where(n<1.9, 7.5, 2.92)
+        p2 = np.exp(val*(n-1.9)*alfa*h0)
         den = np.power(alfa*(self.disk_diameter/2), 0.91)
         A_Zhang = p1*p2/den
 
-        p1 = 11.65*(np.power(n_h0, 0.82)-1)
-        p2 = np.exp(34.65*(n_h0-1.19)*alfa*h0)
+        p1 = 11.65*(np.power(n, 0.82)-1)
+        p2 = np.exp(34.65*(n-1.19)*alfa*h0)
         den = np.power(alfa*(self.disk_diameter/2), 0.6)
         vals_Dohnal = p1*p2/den
-        A_Dohnal = np.where(n_h0 < 1.35, vals_Dohnal, None)
+        A_Dohnal = np.where(n < 1.35, vals_Dohnal, None)
 
         return mask, pd.DataFrame({
             "Ponto": self.infiltrations[mask]["Ponto"],
             "soils_type":soil_types,
             "alfa":alfa,
-            "n/h0":n_h0,
+            "n":n,
             "Suction":h0,
-            "A_Zhang":A_Zhang,
-            "A_Dohnal":A_Dohnal,
+            "A2_Zhang":A_Zhang,
+            "A2_Dohnal":A_Dohnal,
         })
 
     def I(self, t:float, point:str|None = None):
