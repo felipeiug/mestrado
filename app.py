@@ -1,31 +1,16 @@
 from utils import *
 
-pontos_path = r"F:\Mestrado\Trabalho Final\Dados\Levantamento em Campo\Pontos Amostrados.kmz"
-pontos = gpd
-
-# Abrir arquivo
-data:pd.DataFrame = pd.read_excel(r"F:\Mestrado\Trabalho Final\Dados\Levantamento em Campo\Levantamento em Campo_05_09.xlsx", sheet_name="Dados")
-dados_infiltracao = {i:None for i in COLUMNS_INFILTRATION}
-dados_infiltracao["Ponto"] = []
-dados_infiltracao["Soil Type"] = "Sandy Loam"
-dados_infiltracao["Suction"] = -2
-for tempo in COLUMNS_INFILTRATION[1:22]:
-    dados_infiltracao[tempo] = []
-
-for point in data.columns:
-    if point == "Tempos":
-        continue
-
-    volumes = data[point]
-
-    dados_infiltracao["Ponto"].append(point)
-    for n,tempo in enumerate(COLUMNS_INFILTRATION[1:22]):
-        dados_infiltracao[tempo].append(volumes[n])
-
-data = pd.DataFrame(dados_infiltracao)
+file = "F:/Mestrado/Trabalho Final/Dados/Levantamento em Campo/DadosInfiltracao.zip"
+data = gpd.read_file(file)
 
 # Inicializando a classe
 infiltrometro = Infiltrometro(data)
+
+Infiltrado = infiltrometro.Infiltrado("10:00")
+
+mask = gpd.read_file(r"F:\Mestrado\Trabalho Final\Auxilio Petrobrás\mapas_nov_2024\Shp\bacia_regap.shp")
+raster_infiltrado = infiltrometro.raster_infiltrado(t="10:00", mask=mask)
+raster_infiltrado.rio.to_raster("test.tif")
 
 I = infiltrometro.I(10)
 K = infiltrometro.K()

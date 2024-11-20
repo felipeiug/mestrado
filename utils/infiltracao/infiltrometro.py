@@ -1,8 +1,10 @@
 import pandas as pd
 import numpy as np
+import geopandas as gpd
 
 from scipy.optimize import curve_fit
 from ..consts import *
+from .raster_data import GenerateRaster
 
 
 class Infiltrometro:
@@ -29,7 +31,7 @@ class Infiltrometro:
         "A6":          [0.46,  1.40,  4.00,  9.05, 11.24, 10.64,  8.92,  9.30, 10.41,  7.04,  7.18,  5.22],
     })
 
-    def __init__(self, infiltrations:pd.DataFrame):
+    def __init__(self, infiltrations:gpd.GeoDataFrame):
         self.infiltrations = infiltrations
 
         for column in COLUMNS_INFILTRATION:
@@ -50,13 +52,13 @@ class Infiltrometro:
     def _calculate_C1_C2(self):
         columns_time = COLUMNS_INFILTRATION[1:22]
 
-        times = np.array([int(i.split(":")[0])*60 + int(i.split(":")[1]) for i in columns_time])
+        times = np.array([int(i.split("_")[0])*60 + int(i.split("_")[1]) for i in columns_time])
 
         for ponto in self.infiltrations.itertuples():
             index = ponto.Index
             
             # Valor da infiltração nos dados do ponto para os tempos com dados
-            I_data = np.array(ponto[2:23])
+            I_data = np.array(pd.to_numeric(ponto[2:23], errors="coerce"))
             mask = ~np.isnan(I_data)
 
             # Caso não tenha nenhum valor de infiltração
@@ -81,6 +83,13 @@ class Infiltrometro:
     def _equation_infiltration(self, t:float, C1:np.ndarray, C2:np.ndarray):
         return C1 * np.sqrt(t) + C2*t
 
+    def Infiltrado(self, t:str):
+        """Retorna o volume infiltrado par um t [00:00] de 0 a 10 segundos"""
+        vol_init = self.infiltrations["00_00"]
+        vol_fim = self.infiltrations[t.replace(":", "_")]
+        vol_fim = np.where(np.isnan(vol_fim), 0, vol_fim)
+
+        return pd.DataFrame({"Ponto": self.infiltrations["Ponto"], "Vol": (vol_init - vol_fim)})
 
     def K(self, point:str|None = None):
         """Retorna o dataframe com a condutividade hidráulica do solo, contém os pontos com cálculo"""
@@ -189,4 +198,35 @@ class Infiltrometro:
 
         mask = self._mask(point)
         return mask, (self.infiltrations[mask]["C2"]/(2*np.sqrt(t)))+self.infiltrations[mask]["C1"]
+
+    def raster_infiltrado(
+        self,
+        t: str,
+        mask:gpd.GeoDataFrame,
+        type: str = "INVLIN",
+        resolution:float = 30,
+        crs = "EPSG:31983",
+        max_dist_invlin: None|float = None,
+        null_values:float = -1
+    ):
+        """Para uma maskacra e um t [00:00], que deve ser uma geometria qualquer, retorna um raster com o valor infiltrado"""
+        mask = mask.to_crs(crs)
+        bbox = mask.total_bounds
+
+        raster = GenerateRaster(resolution=resolution, bbox=bbox, crs=crs)
+
+        values = self.Infiltrado(t).Vol.values
+        geometries = self.infiltrations.to_crs(crs)
+
+        x = geometries.geometry.x
+        y = geometries.geometry.y
+        points = np.column_stack([x, y, values])
+
+        mask = np.isnan(x) | np.isnan(y) | np.isnan(values)
+        points = points[~mask]
+
+        if type == "INVLIN":
+            return raster.generate_invlin(points, max_dist_invlin, null_values)
+
+        return GenerateRaster(resolution=resolution, bbox=bbox, crs=crs)
 
