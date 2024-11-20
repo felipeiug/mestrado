@@ -1,5 +1,8 @@
 from utils import *
 
+pontos_path = r"F:\Mestrado\Trabalho Final\Dados\Levantamento em Campo\Pontos Amostrados.kmz"
+pontos = gpd
+
 # Abrir arquivo
 data:pd.DataFrame = pd.read_excel(r"F:\Mestrado\Trabalho Final\Dados\Levantamento em Campo\Levantamento em Campo_05_09.xlsx", sheet_name="Dados")
 dados_infiltracao = {i:None for i in COLUMNS_INFILTRATION}
