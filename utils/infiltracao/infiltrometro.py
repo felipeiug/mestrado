@@ -2,10 +2,16 @@ import pandas as pd
 import numpy as np
 import geopandas as gpd
 
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
+    
 from scipy.optimize import curve_fit
+from matplotlib.cm import ScalarMappable
+
 from ..consts import *
 from .raster_data import GenerateRaster
 from ..soil_texture import calculate_soil_type
+from ..soil_texture import plot_soil_texture_classes
 
 
 class Infiltrometro:
@@ -40,6 +46,7 @@ class Infiltrometro:
                 raise ValueError(f"A coluna {column} não está contida no dataframe com os dados de infiltração")
 
         self._calculate_C1_C2()
+        self._taxa_infilt()
         self.infiltrations["Soil Type"] = calculate_soil_type(self.infiltrations["Sand"], self.infiltrations["Clay"])
 
     def _mask(self, point:str|None = None):
@@ -52,7 +59,7 @@ class Infiltrometro:
         return mask
 
     def _calculate_C1_C2(self):
-        columns_time = COLUMNS_INFILTRATION[1:22]
+        columns_time = np.array(COLUMNS_INFILTRATION[1:22])
 
         times = np.array([int(i.split("_")[0])*60 + int(i.split("_")[1]) for i in columns_time])
 
@@ -63,18 +70,60 @@ class Infiltrometro:
             I_data = np.array(pd.to_numeric(ponto[2:23], errors="coerce"))
             mask = ~np.isnan(I_data)
 
+            # Substituindo os valores nulos pelos valores reais
+            I_data[~mask] = I_data[mask][-1]
+            for i, colum_time in enumerate(columns_time):
+                self.infiltrations.at[index, colum_time] = I_data[i]
+
             # Caso não tenha nenhum valor de infiltração
             if not mask.any():
                 continue
             
             # Valor de C1, C2 3 a covariancia entre eles
-            infiltrado = (I_data[mask][0]-I_data[mask])/(np.pi*np.power(self.disk_diameter/2, 2))
-            C1, C2, covariance = self._aproximate_C1_C2(times[mask], infiltrado)
+            C1 = None
+            index_mask = 1
+            while C1 is None or C1 < 0:
+                infiltrado = (I_data[mask][0]-I_data[mask])/(np.pi*np.power(self.disk_diameter/2, 2))
+                C1, C2, covariance = self._aproximate_C1_C2(times[mask], infiltrado)
+
+                if C1 < 0:
+                    mask[index_mask] = False
+                    index_mask += 1
 
             # Atualizando o DataFrame com os valores novos de C1, C2 e COV_C1_C2
+            self.infiltrations[columns_time[~mask]] = np.nan
             self.infiltrations.at[index, "C1"] = C1
             self.infiltrations.at[index, "C2"] = C2
             self.infiltrations.at[index, "COV_C1_C2"] = covariance
+
+    def _taxa_infilt(self):
+        columns_time = COLUMNS_INFILTRATION[1:22]
+
+        times = np.array([int(i.split("_")[0])*60 + int(i.split("_")[1]) for i in columns_time])
+        self.infiltrations["Taxa Inf"] = 0
+
+        for ponto in self.infiltrations.itertuples():
+            index = ponto.Index
+            
+            # Valor da infiltração nos dados do ponto para os tempos com dados
+            I_data = np.array(pd.to_numeric(ponto[2:23], errors="coerce"))
+            mask = ~np.isnan(I_data)
+
+            # Substituindo os valores nulos pelos valores reais
+            I_data[~mask] = I_data[mask][-1]
+            for i, colum_time in enumerate(columns_time):
+                self.infiltrations.at[index, colum_time] = I_data[i]
+
+            # Caso não tenha nenhum valor de infiltração
+            if not mask.any():
+                continue
+            
+            # Valores
+            infiltrado = (I_data[mask][0]-I_data[mask][-1])
+            tempo = times[mask][-1]- times[mask][0]
+
+            # Taxa de infiltração em mL/s
+            self.infiltrations.at[index, "Taxa Inf"] = infiltrado/tempo
 
     def _aproximate_C1_C2(self, t:np.ndarray, I:np.ndarray):
         """Retorna uma tupla com os valores de C1, C2 e a covariancia entre eles."""
@@ -85,6 +134,11 @@ class Infiltrometro:
     def _equation_infiltration(self, t:float, C1:np.ndarray, C2:np.ndarray):
         return C1 * np.sqrt(t) + C2*t
 
+    def _get_gradient_color(self, percent:np.ndarray, start_color:np.ndarray, end_color:np.ndarray):
+        """Retorna as cores interpoladas:`array(N, (r, g, b))` entre start_color:`array(r, g, b)` e end_color:`array(r, g, b)` baseada na porcentagem:`array(N)`."""
+        colors = start_color + (end_color - start_color) * percent[:, np.newaxis]
+        return colors
+    
     def Infiltrado(self, t:str):
         """Retorna o volume infiltrado par um t [00:00] de 0 a 10 segundos"""
         vol_init = self.infiltrations["00_00"]
@@ -231,4 +285,43 @@ class Infiltrometro:
             return raster.generate_invlin(points, max_dist_invlin, null_values)
 
         return GenerateRaster(resolution=resolution, bbox=bbox, crs=crs)
+
+    def plot_soil_texture(self, fig:plt.Figure, ax:plt.Axes):
+        ax._projection_init
+
+        # Infiltração
+        values = self.K()
+        values = np.array([pd.to_numeric(values["K_Zhang"], errors="coerce"), pd.to_numeric(values["K_Dohnal"], errors="coerce")])
+
+        mask_choose = np.isnan(values[1]) | (values[0] > values[1])
+
+        values = np.where(mask_choose, values[0], values[1])
+        maximo = np.ceil(np.ceil(values.max()*100)/5)*5/100
+        percents = values/maximo
+
+        # Exibir no gráfico
+        colors = self._get_gradient_color(percents, np.array([1, 0.7843, 0.3569]), np.array([0.4706, 0.3137, 0]))
+        sizes = 50
+        border_color = [0, 0, 0]
+
+        plot_soil_texture_classes(
+            ax,
+            self.infiltrations['Sand'],
+            self.infiltrations['Silt'],
+            self.infiltrations['Clay'],
+            colors=colors,
+            sizes=sizes,
+            border_colors=border_color,
+        )
+
+        # Exibir o gradiente
+        cmap = mcolors.LinearSegmentedColormap.from_list('meu_gradiente', [np.array([1, 0.7843, 0.3569]), np.array([0.4706, 0.3137, 0])])
+        cax = fig.add_axes([0.1, 0.1, 0.01, 0.8]) # Posição e tamanho [left, bottom, width, height]
+        norm = plt.Normalize(vmin=0, vmax=maximo)  # Define os valores mínimo e máximo
+        sm = ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array([])
+
+        cbar = plt.colorbar(sm, cax=cax)
+        cbar.set_label("Infiltração (cm/s)", fontsize=10)
+        cbar.ax.tick_params(labelsize=8)
 

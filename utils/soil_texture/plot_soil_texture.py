@@ -36,12 +36,12 @@ def plot_soil_texture_classes(
     sand:None|list[float|int]|np.ndarray=None,
     silt:None|list[float|int]|np.ndarray=None,
     clay:None|list[float|int]|np.ndarray=None,
-    colors:None|list[float]=None
+    colors:None|list[float]=None,
+    border_colors:None|list[float]=None,
+    sizes:None|list[float]=None,
 ):
     """Plot soil texture classes."""
     classes = soil_texture_classes
-    if colors is None:
-        colors = [None for i in range(len(sand))]
 
     for (key, value), color in zip(classes.items(), _Set3_data):
         tn0, tn1, tn2 = np.array(value).T
@@ -61,7 +61,7 @@ def plot_soil_texture_classes(
         )
 
     if _is_iterable(sand) and _is_iterable(clay) and _is_iterable(silt):
-        ax.scatter(clay, silt, sand, zorder=3)
+        ax.scatter(clay, silt, sand, zorder=3, c=colors, s=sizes, edgecolors=border_colors)
 
     ax.taxis.set_major_locator(MultipleLocator(10.0))
     ax.laxis.set_major_locator(MultipleLocator(10.0))

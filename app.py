@@ -1,7 +1,6 @@
 from utils import *
 
 import matplotlib.pyplot as plt
-from utils.soil_texture import plot_soil_texture_classes
 
 file = f"D:/Mestrado/Trabalho Final/Dados/Levantamento em Campo/DadosInfiltracao.zip"
 data = gpd.read_file(file)
@@ -19,8 +18,10 @@ I = infiltrometro.I(10)
 K = infiltrometro.K()
 S = infiltrometro.S()
 
-ax = plt.subplot(projection="ternary", ternary_sum=100.0)
-plot_soil_texture_classes(ax, infiltrometro.infiltrations['Sand'], infiltrometro.infiltrations['Silt'], infiltrometro.infiltrations['Clay'])
+fig = plt.figure(figsize=(10, 5))
+ax = fig.add_subplot(projection="ternary", ternary_sum=100.0)
+infiltrometro.plot_soil_texture(fig, ax)
+
 plt.show()
 
 print(K)
