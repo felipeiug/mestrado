@@ -5,6 +5,7 @@ import geopandas as gpd
 from scipy.optimize import curve_fit
 from ..consts import *
 from .raster_data import GenerateRaster
+from ..soil_texture import calculate_soil_type
 
 
 class Infiltrometro:
@@ -39,6 +40,7 @@ class Infiltrometro:
                 raise ValueError(f"A coluna {column} não está contida no dataframe com os dados de infiltração")
 
         self._calculate_C1_C2()
+        self.infiltrations["Soil Type"] = calculate_soil_type(self.infiltrations["Sand"], self.infiltrations["Clay"])
 
     def _mask(self, point:str|None = None):
         mask = (self.infiltrations["C1"].values != None)
@@ -95,8 +97,8 @@ class Infiltrometro:
         """Retorna o dataframe com a condutividade hidráulica do solo, contém os pontos com cálculo"""
 
         mask, df = self.A2(point)
-        df["K_Zhang"] = self.infiltrations[mask]["C2"]/df["A2_Zhang"]
-        df["K_Dohnal"] = np.where(df["A2_Dohnal"].values!=None, self.infiltrations[mask]["C2"]/df["A2_Dohnal"], None)
+        df["K_Zhang"] = self.infiltrations[mask]["C1"]/df["A2_Zhang"]
+        df["K_Dohnal"] = np.where(df["A2_Dohnal"].values!=None, self.infiltrations[mask]["C1"]/df["A2_Dohnal"], None)
 
         return df
     
@@ -107,7 +109,7 @@ class Infiltrometro:
         if df is None:
             return None
         
-        df["S"] = self.infiltrations[mask]["C1"]/df["A1"]
+        df["S"] = self.infiltrations[mask]["C2"]/df["A1"]
 
         return df
 
