@@ -1,5 +1,5 @@
 import Clarity from '@microsoft/clarity';
-import { AppThemeProvider, KeyEventHandler, StartApi } from './context';
+import { AppThemeProvider, ErrorProvider, KeyEventHandler, LoadingProvider, StartApi } from './context';
 import { AppRoutes } from './routes';
 
 function App() {
@@ -10,7 +10,11 @@ function App() {
     <AppThemeProvider>
       <KeyEventHandler>
         <StartApi>
-          <AppRoutes />
+          <ErrorProvider>
+            <LoadingProvider>
+              <AppRoutes />
+            </LoadingProvider>
+          </ErrorProvider>
         </StartApi>
       </KeyEventHandler>
     </AppThemeProvider>

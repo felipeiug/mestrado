@@ -1,13 +1,7 @@
 import axios, { AxiosRequestConfig } from "axios";
-import { useRef, useState } from "react";
-import { generateRandomHash } from "../core";
 
 // Fução API
 export const StartApi: React.FC<Props> = ({ children }) => {
-
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [appKey, setAppKey] = useState<string>(generateRandomHash(8));
-  const [currentRequest, setCurrentRequest] = useState<(AxiosRequestConfig & { _retry?: boolean; }) | undefined>(undefined);
 
   axios.defaults.withCredentials = true;
 
@@ -31,17 +25,13 @@ export const StartApi: React.FC<Props> = ({ children }) => {
       // Se a resposta for 401 e a requisição não foi marcada como repetida
       if (error.response?.status === 401 && !originalRequest._retry) {
         originalRequest._retry = true;
-        setIsRefreshing(true);
-        setCurrentRequest(originalRequest);
       }
 
       return Promise.reject(error);
     },
   );
 
-  return (<div key={appKey}>
-    {children}
-  </ div>);
+  return (<div>{children}</ div>);
 };
 
 type Props = {

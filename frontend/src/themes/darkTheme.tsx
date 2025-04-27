@@ -4,18 +4,18 @@ export const DarkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#d97c2d', // Laranja forte
+      main: 'rgb(217, 125, 45)', // Laranja forte
     },
     secondary: {
-      main: '#c04d18', // Laranja avermelhado
+      main: 'rgb(192, 77, 24)', // Laranja avermelhado
     },
     background: {
-      default: '#33190e', // Marrom bem escuro
-      paper: '#4a2515',
+      default: 'rgb(51, 25, 14)', // Marrom bem escuro
+      paper: 'rgb(74, 37, 21)',
     },
     text: {
-      primary: '#f4d4b4', // Bege claro
-      secondary: '#d97c2d',
+      primary: 'rgb(244, 212, 180)', // Bege claro
+      secondary: 'rgb(217, 125, 45)',
     },
   },
   typography: {
@@ -32,32 +32,12 @@ export const DarkTheme = createTheme({
     },
   },
   components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: '12px',
-          padding: '8px 24px',
-          fontWeight: 600,
-          backgroundImage: 'linear-gradient(45deg, #d97c2d 30%, #c04d18 90%)',
-          color: '#fff',
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: '16px',
-          backgroundColor: '#4a2515',
-          boxShadow: '0px 4px 20px rgba(0,0,0,0.3)',
-        },
-      },
-    },
     MuiTextField: {
       styleOverrides: {
         root: {
           borderRadius: '8px',
-          backgroundColor: '#33190e',
-          color: '#f4d4b4',
+          backgroundColor: 'rgb(51, 25, 14)',
+          color: 'rgb(244, 212, 180)',
         },
       },
     },

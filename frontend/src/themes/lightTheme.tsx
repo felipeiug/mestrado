@@ -4,18 +4,18 @@ export const LightTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#d97c2d', // Laranja forte
+      main: 'rgb(217, 125, 45)', // Laranja forte
     },
     secondary: {
-      main: '#8a441f', // Marrom-alaranjado
+      main: 'rgb(138, 68, 31)', // Marrom-alaranjado
     },
     background: {
-      default: '#f4d4b4', // Bege
-      paper: '#ffffff',
+      default: 'rgb(244, 212, 180)', // Bege
+      paper: 'rgb(255, 255, 255)',
     },
     text: {
-      primary: '#612f1b', // Marrom escuro
-      secondary: '#8a441f',
+      primary: 'rgb(97, 47, 27)', // Marrom escuro
+      secondary: 'rgb(138, 68, 31)',
     },
   },
   typography: {
@@ -32,23 +32,6 @@ export const LightTheme = createTheme({
     },
   },
   components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: '12px',
-          padding: '8px 24px',
-          fontWeight: 600,
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: '16px',
-          boxShadow: '0px 4px 20px rgba(0,0,0,0.1)',
-        },
-      },
-    },
     MuiTextField: {
       styleOverrides: {
         root: {

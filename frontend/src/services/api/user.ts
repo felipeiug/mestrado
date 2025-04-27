@@ -1,15 +1,11 @@
 import axios, { AxiosResponse, isAxiosError } from "axios";
-import { User } from "../../context";
-import { NewUser } from "../../components";
-import { RequestError } from "./api";
+import { MyError, User } from "../../context";
 
 
-const getUser = async (): Promise<User | RequestError> => {
+const getUser = async (): Promise<User | MyError> => {
   try {
-    const data = await axios.get(`${process.env.REACT_APP_URL}/user/data`);
-    if (data.data.insertDate) data.data.insertDate = new Date(data.data.insertDate);
-    if (data.data.updateDate) data.data.updateDate = new Date(data.data.updateDate);
-    return data.data;
+    const data = await axios.get<User>(`${process.env.REACT_APP_URL}/user`);
+    return processUser(data.data);
 
   } catch (error) {
     if (isAxiosError(error)) {
@@ -23,12 +19,10 @@ const getUser = async (): Promise<User | RequestError> => {
   }
 };
 
-const getUserById = async (id: string): Promise<User | RequestError> => {
+const getUserById = async (id: string): Promise<User | MyError> => {
   try {
-    const data = await axios.get(`${process.env.REACT_APP_URL}/user/${id}`);
-    if (data.data.insertDate) data.data.insertDate = new Date(data.data.insertDate);
-    if (data.data.updateDate) data.data.updateDate = new Date(data.data.updateDate);
-    return data.data;
+    const data = await axios.get<User>(`${process.env.REACT_APP_URL}/user/${id}`);
+    return processUser(data.data);
 
   } catch (error) {
     if (isAxiosError(error)) {
@@ -43,15 +37,16 @@ const getUserById = async (id: string): Promise<User | RequestError> => {
 };
 
 interface AllUsers {
-  items: string[]; // Id dos usuários
+  items: User[]; // Id dos usuários
   page: number;
   perPage: number;
   totalPages: number;
   totalItems: number;
 }
-const getAll = async (page: number, perPage: number): Promise<AllUsers | RequestError> => {
+const getAll = async (page: number, perPage: number): Promise<AllUsers | MyError> => {
   try {
-    const data: AxiosResponse<AllUsers> = await axios.get(`${process.env.REACT_APP_URL}/user/list_my_users/${page.toFixed(0)}/${perPage.toFixed(0)}`);
+    const data: AxiosResponse<AllUsers> = await axios.get(`${process.env.REACT_APP_URL}/user/all/${page.toFixed(0)}/${perPage.toFixed(0)}`);
+    data.data.items = data.data.items.map(processUser);
     return data.data;
 
   } catch (error) {
@@ -66,9 +61,10 @@ const getAll = async (page: number, perPage: number): Promise<AllUsers | Request
   }
 };
 
-const getByName = async (name: string, page: number, perPage: number): Promise<AllUsers | RequestError> => {
+const getByName = async (name: string, page: number, perPage: number): Promise<AllUsers | MyError> => {
   try {
-    const data: AxiosResponse<AllUsers> = await axios.get(`${process.env.REACT_APP_URL}/user/users_by_name/${name}/${page.toFixed(0)}/${perPage.toFixed(0)}`);
+    const data: AxiosResponse<AllUsers> = await axios.get(`${process.env.REACT_APP_URL}/user/all_name/${name}/${page.toFixed(0)}/${perPage.toFixed(0)}`);
+    data.data.items = data.data.items.map(processUser);
     return data.data;
 
   } catch (error) {
@@ -83,132 +79,10 @@ const getByName = async (name: string, page: number, perPage: number): Promise<A
   }
 };
 
-const login = async (email: string, password: string): Promise<{ token: string; } | RequestError> => {
+async function update(user: User): Promise<User | MyError> {
   try {
-    const data: AxiosResponse<{ token: string; }> = await axios.post(
-      `${process.env.REACT_APP_URL}/user/login`,
-      {
-        'email': email,
-        'password': password,
-      },
-    );
-    return data.data;
-
-  } catch (error) {
-    if (isAxiosError(error)) {
-      return {
-        error: error.response?.data.error ?? "Login Error",
-        message: error.response?.data.message ?? "Erro ao relaizar o login",
-      };
-    } else {
-      throw error;
-    }
-  }
-};
-
-const logout = async (): Promise<{ ok: boolean; } | RequestError> => {
-  try {
-    const data: AxiosResponse<{ ok: boolean; }> = await axios.get(`${process.env.REACT_APP_URL}/user/logout`);
-    return data.data;
-
-  } catch (error) {
-    if (isAxiosError(error)) {
-      return {
-        error: error.response?.data.error ?? "Login Error",
-        message: error.response?.data.message ?? "Erro ao relaizar o login",
-      };
-    } else {
-      throw error;
-    }
-  }
-};
-
-const addUser = async (newUser: NewUser): Promise<{ user: string; } | RequestError> => {
-  try {
-    const data: AxiosResponse<{ user: string; }> = await axios.post(
-      `${process.env.REACT_APP_URL}/user/add_user`,
-      {
-        'nome': newUser.nome,
-        'email': newUser.email,
-        'password': newUser.password,
-        'empresa_id': newUser.empresa?.id,
-      },
-    );
-    return data.data;
-
-  } catch (error) {
-    if (isAxiosError(error)) {
-      return {
-        error: error.response?.data.error ?? "Add User Error",
-        message: error.response?.data.message ?? "Erro ao adicionar o novo usuário",
-      };
-    } else {
-      throw error;
-    }
-  }
-};
-
-const changePassw = async (oldPass: string, newPass: string): Promise<{ ok: boolean; } | RequestError> => {
-  try {
-    const data: AxiosResponse<{ ok: boolean; }> = await axios.post(
-      `${process.env.REACT_APP_URL}/user/change_password`,
-      {
-        'oldPass': oldPass,
-        'newPass': newPass,
-      },
-    );
-    return data.data;
-
-  } catch (error) {
-    if (isAxiosError(error)) {
-      return {
-        error: error.response?.data.error ?? "User Error",
-        message: error.response?.data.message ?? "Erro ao alterar a senha do usuário",
-      };
-    } else {
-      throw error;
-    }
-  }
-};
-
-export interface Funcionario extends User {
-  status: boolean;
-}
-
-const getFuncionarios = async (idBarragem: number, page: number, perPage: number): Promise<Funcionario[] | RequestError> => {
-  try {
-    const res = await axios.get(`${process.env.REACT_APP_URL}/user/list_my_users/${idBarragem}/${page}/${perPage}`);
-    return res.data.items;
-  } catch (error) {
-    if (isAxiosError(error)) {
-      return {
-        error: error.response?.data.error ?? "Erro",
-        message: error.response?.data.message ?? "Erro ao buscar funcionários",
-      };
-    }
-    throw error;
-  }
-};
-
-async function remove(id: string): Promise<true | RequestError> {
-  try {
-    await axios.delete(`${process.env.REACT_APP_URL}/user/delete_user/${id}`);
-    return true;
-  } catch (error) {
-    if (isAxiosError(error)) {
-      return {
-        error: error.response?.data.error ?? "Erro",
-        message: error.response?.data.message ?? "Erro ao excluir funcionário",
-      };
-    }
-    throw error;
-  }
-}
-
-async function update(id: string, data: Partial<Funcionario>): Promise<Funcionario | RequestError> {
-  try {
-    const res = await axios.put(`${process.env.REACT_APP_URL}/user/update_user/${id}`, data);
-    return res.data.user;
+    const data = await axios.put<User>(`${process.env.REACT_APP_URL}/user`, user);
+    return processUser(data.data);
   } catch (error) {
     if (isAxiosError(error)) {
       return {
@@ -220,42 +94,20 @@ async function update(id: string, data: Partial<Funcionario>): Promise<Funcionar
   }
 }
 
-export interface CreateUserPayload {
-  nome: string;
-  email: string;
-  setor?: string;
-  funcao?: string;
-  telefones?: string;
-  admin: boolean;
-  empreedimento: string;
-}
-async function create(data: CreateUserPayload): Promise<string | RequestError> {
-  try {
-    const res = await axios.post(`${process.env.REACT_APP_URL}/user/add_user`, data);
-    return res.data.user;
-  } catch(error) {
-    if (isAxiosError(error)) {
-      return {
-        error: error.response?.data.error ?? "Erro",
-        message: error.response?.data.message ?? "Erro ao cadastrar funcionário",
-      };
-    }
-    throw error;
-  }
-}
 
+function processUser(user: User) {
+
+  user.insertDate = new Date(user.insertDate);
+  if (user.lastLogin) user.lastLogin = new Date(user.lastLogin);
+  if (user.updateDate) user.updateDate = new Date(user.updateDate);
+
+  return user;
+}
 
 export const ApiUser = {
-  getUser: getUser,
-  getByName: getByName,
-  getUserById: getUserById,
-  getAll: getAll,
-  login: login,
-  logout: logout,
-  addUser: addUser,
-  changePassw: changePassw,
-  getFuncionarios: getFuncionarios,
-  remove: remove,
-  update: update,
-  create: create,
+  update,
+  getAll,
+  getUser,
+  getByName,
+  getUserById,
 };
