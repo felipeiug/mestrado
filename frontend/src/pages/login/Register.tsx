@@ -36,15 +36,16 @@ export const Register = () => {
     }
 
     setLoading({ open: true });
-    api.login.newUser(user).then(value => {
-      setLoading({ open: false });
+    const login = await api.login.newUser(user);
+    setLoading({ open: false });
 
-      if ("error" in value) {
-        setError(value);
-        return;
-      }
-      navigate("/login");
-    });
+    if ("error" in login) {
+      setError(login);
+      return;
+    }
+
+    localStorage.setItem("authToken", login.token);
+    navigate("/app");
   };
 
   return (

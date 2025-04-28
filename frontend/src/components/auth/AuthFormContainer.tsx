@@ -1,11 +1,13 @@
 import { Box, Dialog, DialogContent, DialogTitle, Typography } from '@mui/material';
+import Logo from "../../assets/logo.jpg";
 
 interface AuthFormContainerProps {
   title: string;
+  logo?: boolean;
   children?: React.ReactNode;
 }
 
-export const AuthFormContainer = ({ title, children }: AuthFormContainerProps) => {
+export const AuthFormContainer = ({ title, logo, children }: AuthFormContainerProps) => {
   return (
     <Box sx={{ width: "100vw", height: "100vh", display: "flex" }}>
       <Dialog open={true}>
@@ -15,10 +17,41 @@ export const AuthFormContainer = ({ title, children }: AuthFormContainerProps) =
           </Typography>
         </DialogTitle>
 
-        {children && <DialogContent>
-          {children}
-        </DialogContent>}
+        <DialogContent>
+          <Box sx={{
+            flex: 1,
+            gap: "1em",
+            height: logo ? "35vh" : undefined,
+            display: "flex",
+            flexDirection: "row",
+          }}>
+            <Box sx={{ flex: 1 }}>
+              {children}
+            </Box>
+
+            {logo &&
+              <Box sx={{
+                width: "10vw",
+                height: "100%",
+                justifyContent: 'center',
+              }}>
+                <img
+                  src={Logo}
+                  alt="Logo"
+                  style={{
+                    width: "10vw",
+                    height: "100%",
+                    objectFit: "cover",
+                    borderRadius: "2em",
+                  }}
+                />
+              </Box>}
+
+          </Box>
+        </DialogContent>
+
       </Dialog>
+
     </Box>
   );
 };

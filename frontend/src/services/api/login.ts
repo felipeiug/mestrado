@@ -63,14 +63,13 @@ const sendResetCode = async (email: string): Promise<{ ok: boolean; } | MyError>
   }
 };
 
-const changePassw = async (oldPass: string, newPass: string, token: string): Promise<{ ok: boolean; } | MyError> => {
+const changePassw = async (password: string, token: string): Promise<{ token: string; } | MyError> => {
   try {
-    const data: AxiosResponse<{ ok: boolean; }> = await axios.post(
+    const data: AxiosResponse<{ token: string; }> = await axios.post(
       `${url}/change_password`,
       {
         'token': token,
-        'old_pass': oldPass,
-        'new_pass': newPass,
+        'password': password,
       },
     );
     return data.data;
@@ -91,9 +90,9 @@ export interface UserWithPasswords extends User {
   password: string;
   confirmPassword?: string;
 }
-const newUser = async (user: UserWithPasswords): Promise<{ ok: boolean; } | MyError> => {
+const newUser = async (user: UserWithPasswords): Promise<{ token: string; } | MyError> => {
   try {
-    const data: AxiosResponse<{ ok: boolean; }> = await axios.post(
+    const data: AxiosResponse<{ token: string; }> = await axios.post(
       `${url}/new`,
       user,
     );

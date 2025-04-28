@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { useApi } from "../services";
 import { useError } from "./ErrorContext";
 import { useNavigate } from "react-router-dom";
+import { useAppThemeContext } from "./ThemeContext";
 
 export interface User {
   id: string;
@@ -9,9 +10,12 @@ export interface User {
   email: string;
   admin: boolean;
   status: boolean;
+  theme?: boolean;
+  lastLogin?: Date;
   university?: string;
   universityValid?: boolean;
-  lastLogin?: Date;
+  lastResetPassword?: Date;
+  resetPasswordCode?: string;
 
   updateBy?: string;
   insertDate: Date;
@@ -27,8 +31,9 @@ export const useUser = () => {
 
 export const UserProvider: React.FC<Props> = ({ children }) => {
   const api = useApi();
-  const navigate = useNavigate();
   const setError = useError();
+  const navigate = useNavigate();
+  const { toggleTheme } = useAppThemeContext();
 
   const [user, setUser] = useState<User>();
 
@@ -39,7 +44,7 @@ export const UserProvider: React.FC<Props> = ({ children }) => {
         setError(user);
         return;
       }
-
+      toggleTheme(user.theme ?? false);
       setUser(user);
     });
   }, []);

@@ -3,12 +3,16 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, TextField } from '@mui/material';
 import { AuthFormContainer } from '../../components';
 import { useError } from '../../context/ErrorContext';
+import { useApi } from '../../services';
+import { useLoading } from '../../context';
 
 export const ResetPassword = () => {
-  const [searchParams] = useSearchParams();
-
+  const api = useApi();
   const setError = useError();
   const navigate = useNavigate();
+  const setLoading = useLoading();
+
+  const [searchParams] = useSearchParams();
 
   const token = searchParams.get('token');
 
@@ -20,21 +24,23 @@ export const ResetPassword = () => {
 
     if (password !== confirmPassword) {
       setError({
-        error: 'Problemas ao Atualizar Senha',
+        error: 'Erro',
         message: 'As senhas não coincidem',
       });
       return;
     }
 
-    // TODO: Alterar pro loguin no server
-    console.log(token);
-    navigate('/login');
+    setLoading({ open: true });
+    const login = await api.login.changePassw(password, token ?? '');
+    setLoading({ open: false });
 
-    // try {
-    //   navigate('/login');
-    // } catch (err) {
-    //   setMessage('Erro ao redefinir senha');
-    // }
+    if ("error" in login) {
+      setError(login);
+      return;
+    }
+
+    localStorage.setItem("authToken", login.token);
+    navigate('/app');
   };
 
   return (
