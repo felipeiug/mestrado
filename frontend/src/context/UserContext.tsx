@@ -5,21 +5,32 @@ import { useNavigate } from "react-router-dom";
 import { useAppThemeContext } from "./ThemeContext";
 
 export interface User {
+  // Identificação
   id: string;
   name: string;
   email: string;
+
+  // Controle de acesso
   admin: boolean;
   status: boolean;
-  theme?: boolean;
-  lastLogin?: Date;
-  university?: string;
+
+  // Verificações
+  validEmail: boolean;
+  universityId?: string;
   universityValid?: boolean;
+
+  // Preferências
+  theme?: boolean;
+
+  // Senha
   lastResetPassword?: Date;
   resetPasswordCode?: string;
 
-  updateBy?: string;
+  // Auditoria
+  lastLogin?: Date;
   insertDate: Date;
   updateDate?: Date;
+  updateBy?: string;
 }
 
 

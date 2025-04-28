@@ -4,7 +4,7 @@ import { MyError, User } from "../../context";
 
 const getUser = async (): Promise<User | MyError> => {
   try {
-    const data = await axios.get<User>(`${process.env.REACT_APP_URL}/user`);
+    const data = await axios.get<User>(`${import.meta.env.VITE_URL}/user`);
     return processUser(data.data);
 
   } catch (error) {
@@ -21,7 +21,7 @@ const getUser = async (): Promise<User | MyError> => {
 
 const getUserById = async (id: string): Promise<User | MyError> => {
   try {
-    const data = await axios.get<User>(`${process.env.REACT_APP_URL}/user/${id}`);
+    const data = await axios.get<User>(`${import.meta.env.VITE_URL}/user/${id}`);
     return processUser(data.data);
 
   } catch (error) {
@@ -45,7 +45,7 @@ interface AllUsers {
 }
 const getAll = async (page: number, perPage: number): Promise<AllUsers | MyError> => {
   try {
-    const data: AxiosResponse<AllUsers> = await axios.get(`${process.env.REACT_APP_URL}/user/all/${page.toFixed(0)}/${perPage.toFixed(0)}`);
+    const data: AxiosResponse<AllUsers> = await axios.get(`${import.meta.env.VITE_URL}/user/all/${page.toFixed(0)}/${perPage.toFixed(0)}`);
     data.data.items = data.data.items.map(processUser);
     return data.data;
 
@@ -63,7 +63,7 @@ const getAll = async (page: number, perPage: number): Promise<AllUsers | MyError
 
 const getByName = async (name: string, page: number, perPage: number): Promise<AllUsers | MyError> => {
   try {
-    const data: AxiosResponse<AllUsers> = await axios.get(`${process.env.REACT_APP_URL}/user/all_name/${name}/${page.toFixed(0)}/${perPage.toFixed(0)}`);
+    const data: AxiosResponse<AllUsers> = await axios.get(`${import.meta.env.VITE_URL}/user/all_name/${name}/${page.toFixed(0)}/${perPage.toFixed(0)}`);
     data.data.items = data.data.items.map(processUser);
     return data.data;
 
@@ -81,7 +81,7 @@ const getByName = async (name: string, page: number, perPage: number): Promise<A
 
 async function update(user: User): Promise<User | MyError> {
   try {
-    const data = await axios.put<User>(`${process.env.REACT_APP_URL}/user`, user);
+    const data = await axios.put<User>(`${import.meta.env.VITE_URL}/user`, user);
     return processUser(data.data);
   } catch (error) {
     if (isAxiosError(error)) {

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button, TextField, Link, Box, Grid, Checkbox, Typography } from '@mui/material';
+import { Button, TextField, Link, Box, Grid, Autocomplete, Skeleton } from '@mui/material';
 import { AuthFormContainer } from '../../components';
 import { useApi } from '../../services';
 import { useError, useLoading } from '../../context';
@@ -12,7 +12,8 @@ export const Register = () => {
   const setError = useError();
   const setLoading = useLoading();
 
-  const [university, setUniversity] = useState(false);
+  const [universityText, setUniversityText] = useState('');
+  const [universityOptions, setUniversityOptions] = useState<{ [key: string]: string; }>({});
   const [user, setUser] = useState<UserWithPasswords>({
     id: "",
     name: "",
@@ -20,9 +21,14 @@ export const Register = () => {
     password: "",
     admin: false,
     status: true,
+    validEmail: true,
     confirmPassword: "",
     insertDate: new Date(),
   });
+
+  useEffect(() => {
+    api.university.getAll(universityText).then(setUniversityOptions);
+  }, [universityText]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +57,7 @@ export const Register = () => {
   return (
     <AuthFormContainer title="Cadastro">
       <form onSubmit={handleSubmit}>
-        <Grid container spacing={"0.5em"}>
+        <Grid container columnSpacing={"0.5em"} rowSpacing={0}>
           <Grid size={12}>
             <TextField
               required
@@ -81,32 +87,39 @@ export const Register = () => {
             />
           </Grid>
 
-          <Grid size={8} sx={{ display: 'flex', flexDirection: "row", alignItems: "center" }}>
-            {university && <TextField
-              fullWidth
-              type="text"
-              margin="normal"
-              label="Universidade"
-              value={user.university}
-              onChange={(e) => setUser({
-                ...user,
-                university: e.target.value,
-              })}
-            />}
-          </Grid>
-
-          <Grid size={4} sx={{ display: 'flex', flexDirection: "row", alignItems: "center" }}>
-            <Checkbox
-              title='Selecionar Universidade'
-              checked={university}
-              onChange={(_, checked) => {
-                setUniversity(checked);
-                if (!checked) setUser({ ...user, university: undefined });
-              }}
-            />
-            <Typography>
-              Universidade
-            </Typography>
+          <Grid size={12} sx={{ display: 'flex', flexDirection: "row", alignItems: "center" }}>
+            {Object.keys(universityOptions).length === 0 ? <div style={{ flex: 1 }}> <Skeleton height="6em" /> </div> :
+              <Autocomplete
+                freeSolo
+                fullWidth
+                options={Object.values(universityOptions)}
+                value={universityOptions[user.universityId ?? ''] ?? universityText}
+                onChange={(_, newValue) => setUser({
+                  ...user,
+                  universityId: Object.keys(universityOptions).filter(key => universityOptions[key] === newValue)[0],
+                })}
+                onInputChange={(_, newInputValue) => {
+                  const matches = Object.keys(universityOptions).filter(key => universityOptions[key] === newInputValue);
+                  if (matches.length > 0) {
+                    setUser({
+                      ...user,
+                      universityId: matches[0],
+                    });
+                    return;
+                  }
+                  setUniversityText(newInputValue);
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    fullWidth
+                    label="Universidade"
+                    margin="normal"
+                  />
+                )}
+                filterOptions={(options, state) => options.filter(option => option.toLowerCase().includes(state.inputValue.toLowerCase()))}
+                sx={{ mt: 2 }}
+              />}
           </Grid>
 
 

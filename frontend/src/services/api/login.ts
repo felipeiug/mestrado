@@ -1,7 +1,7 @@
 import axios, { AxiosResponse, isAxiosError } from "axios";
 import { MyError, User } from "../../context";
 
-const url = `${import.meta.env.REACT_APP_URL}/login`;
+const url = `${import.meta.env.VITE_URL}/login`;
 
 const login = async (email: string, password: string): Promise<{ token: string; } | MyError> => {
   try {

@@ -1,4 +1,5 @@
 import { ApiLogin } from "./login";
+import { ApiUniversity } from "./universidade";
 import { ApiUser } from "./user";
 
 export interface Paginated<T> {
@@ -13,6 +14,7 @@ export interface Paginated<T> {
 export interface ApiSchema {
   user: typeof ApiUser;
   login: typeof ApiLogin;
+  university: typeof ApiUniversity;
   baseUrl: string;
 }
 
@@ -21,6 +23,7 @@ export function useApi(): ApiSchema {
   return {
     user: ApiUser,
     login: ApiLogin,
+    university: ApiUniversity,
     baseUrl: `${import.meta.env.REACT_APP_URL}`,
   };
 }
