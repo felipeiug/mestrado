@@ -21,31 +21,32 @@ export const AuthFormContainer = ({ title, logo, children }: AuthFormContainerPr
           <Box sx={{
             flex: 1,
             gap: "1em",
-            height: logo ? "35vh" : undefined,
             display: "flex",
             flexDirection: "row",
+            height: logo ? "35vh" : undefined,
           }}>
             <Box sx={{ flex: 1 }}>
               {children}
             </Box>
 
-            {logo &&
-              <Box sx={{
-                width: "10vw",
-                height: "100%",
-                justifyContent: 'center',
-              }}>
-                <img
-                  src={Logo}
-                  alt="Logo"
-                  style={{
-                    width: "10vw",
-                    height: "100%",
-                    objectFit: "cover",
-                    borderRadius: "2em",
-                  }}
-                />
-              </Box>}
+            {logo && <Box sx={{
+              flex: 0.6,
+              height: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: 'center',
+            }}>
+              <img
+                src={Logo}
+                alt="Logo"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  borderRadius: "0.5em",
+                }}
+              />
+            </Box>}
 
           </Box>
         </DialogContent>
