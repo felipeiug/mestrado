@@ -72,7 +72,7 @@ export const Register = () => {
             />
           </Grid>
 
-          <Grid size={12}>
+          <Grid size={6} sx={{ display: "flex", alignItems: "end" }}>
             <TextField
               label="Email"
               type="email"
@@ -87,7 +87,7 @@ export const Register = () => {
             />
           </Grid>
 
-          <Grid size={12} sx={{ display: 'flex', flexDirection: "row", alignItems: "center" }}>
+          <Grid size={6}>
             {Object.keys(universityOptions).length === 0 ? <div style={{ flex: 1 }}> <Skeleton height="6em" /> </div> :
               <Autocomplete
                 freeSolo
