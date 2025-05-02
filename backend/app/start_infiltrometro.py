@@ -1,5 +1,4 @@
 from utils import *
-
 import matplotlib.pyplot as plt
 
 file = f"D:/Mestrado/Trabalho Final/Dados/Levantamento em Campo/DadosInfiltracao.zip"
