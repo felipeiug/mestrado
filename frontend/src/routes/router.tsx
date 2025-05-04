@@ -1,13 +1,13 @@
 import React from 'react';
 import { Routes, Route, BrowserRouter, Navigate } from 'react-router-dom';
 import { ForgotPassword, Login, Register, ResetPassword } from '../pages';
-import { UserProvider } from '../context';
+import { HomePage } from '../pages/home';
 
 export const AppRoutes: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/*" element={<Navigate to="/login" />} />
+        <Route path="/*" element={<Navigate to="/app/home" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -20,12 +20,10 @@ export const AppRoutes: React.FC = () => {
 
 function LoggedApp() {
   return (
-    <UserProvider>
-      <Routes>
-        {/* <Route path="/home/:id" element={<HomePage />} />
-      <Route path="/hbr/*" element={<HBRApp />} />
-      <Route path="/:barragem/*" element={<BarragemApp />} /> */}
-      </Routes>
-    </UserProvider>
+    // <UserProvider>
+    <Routes>
+      <Route path="/home" element={<HomePage />} />
+    </Routes>
+    // </UserProvider>
   );
 }
