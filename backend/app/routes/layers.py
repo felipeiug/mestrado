@@ -46,20 +46,20 @@ not_found = HTTPException(
 @layers.get("/list", response_model=list[LayerType])
 async def get_layers(db: Session = Depends(get_db)):
     return [
-        MoE(),
-        LSTM(),
+        MoE(experts=[], out_features=1),
+        LSTM(input_size=1, hidden_size=1),
         GELU(),
         SiLU(),
         ReLU(),
         Tanh(),
-        Linear(),
-        Conv1d(),
-        Conv2d(),
+        Linear(in_features=1, out_features=1),
+        Conv1d(in_channels=1, out_channels=1, kernel_size=1),
+        Conv2d(in_channels=1, out_channels=1, kernel_size=1),
         Softmax(),
-        Dropout(),
+        Dropout(p=1),
         Sigmoid(),
         LeakyReLU(),
-        BatchNorm2d(),
-        MultiheadAttention(),
+        BatchNorm2d(num_features=1),
+        MultiheadAttention(embed_dim=1, num_heads=1),
     ]
 

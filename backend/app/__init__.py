@@ -1,4 +1,3 @@
-
 # %% Variáveis de ambiente
 import os
 os.system('cls' if os.name == 'nt' else 'clear')
@@ -10,9 +9,6 @@ load_dotenv(override=True)
 from app import routes
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-# %% Configurando as filas e processos em paralelo
-from app.models.database import Base, engine
 
 # %% Inicializando o FastApi
 app = FastAPI(title="Neuro Deep Backend")
@@ -28,6 +24,7 @@ app.add_middleware(
 app.include_router(routes.layers)
 
 # %% Bando de dados
+from app.models.database import Base, engine
 
 # Criando as tabelas do DB
 os.makedirs("./DB", exist_ok=True)

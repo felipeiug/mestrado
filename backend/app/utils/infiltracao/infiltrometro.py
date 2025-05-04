@@ -151,8 +151,8 @@ class Infiltrometro:
         """Retorna o dataframe com a condutividade hidráulica do solo, contém os pontos com cálculo"""
 
         mask, df = self.A2(point)
-        df["K_Zhang"] = self.infiltrations[mask]["C1"]/df["A2_Zhang"]
-        df["K_Dohnal"] = np.where(df["A2_Dohnal"].values!=None, self.infiltrations[mask]["C1"]/df["A2_Dohnal"], None)
+        df["K_Zhang"] = self.infiltrations[mask]["C2"]/df["A2_Zhang"]
+        df["K_Dohnal"] = np.where(df["A2_Dohnal"].values!=None, self.infiltrations[mask]["C2"]/df["A2_Dohnal"], None)
 
         return df
     
@@ -163,7 +163,7 @@ class Infiltrometro:
         if df is None:
             return None
         
-        df["S"] = self.infiltrations[mask]["C2"]/df["A1"]
+        df["S"] = self.infiltrations[mask]["C1"]/df["A1"]
 
         return df
 

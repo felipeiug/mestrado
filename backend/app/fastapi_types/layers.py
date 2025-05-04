@@ -414,7 +414,7 @@ class MixtureOfExperts(nn.Module):
         
         return outputs
 """
-    experts: list[Any]
+    experts: list[Union[LSTM, GELU, SiLU, ReLU, Tanh, Linear, Conv1d, Conv2d, Softmax, Dropout, Sigmoid, LeakyReLU, BatchNorm2d, MultiheadAttention]]
     out_features: int
     bias: bool = True
 
