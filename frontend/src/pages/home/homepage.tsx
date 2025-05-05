@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AppBar,
   Box,
-  Button,
   Divider,
   Drawer,
   IconButton,
@@ -12,6 +11,7 @@ import {
   ListItemIcon,
   ListItemText,
   Paper,
+  Skeleton,
   Toolbar,
   Tooltip,
   Typography,
@@ -23,17 +23,43 @@ import {
   Layers as LayersIcon,
   Dataset as DatasetIcon,
   PlayCircle as TrainIcon,
-  CloudUpload as DeployIcon,
   Settings as SettingsIcon,
-  Help as HelpIcon,
   Add,
   Save,
-  FileOpen
+  FileOpen,
+  Close
 } from '@mui/icons-material';
+import { Fluxograma, LayerHelp } from '../../components';
+import { useLayers } from '../../context/LayersContext';
+import { LayerTypeName } from '../../core';
+import { useLoading } from '../../context';
+
+interface DrawerItem {
+  divider?: boolean;
+  text?: string;
+  icon?: React.ReactNode;
+  onSelect?: () => void;
+}
 
 export const HomePage: React.FC = () => {
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const theme = useTheme();
+  const layers = useLayers();
+  const setLoading = useLoading();
+
+  const [helpText, setHelpText] = useState<string>();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    setLoading({ open: layers.length === 0 });
+  }, [layers]);
+
+  const handleHelp = (layerName: LayerTypeName) => {
+    for (const layer of layers) {
+      if (layer.name === layerName) {
+        setHelpText(layer.desc);
+      }
+    }
+  };
 
   const handleDrawerToggle = () => {
     setDrawerOpen(!drawerOpen);
@@ -51,18 +77,33 @@ export const HomePage: React.FC = () => {
     //
   };
 
+  const handleNewLayers = () => {
+    //
+  };
+
+  const handleDataset = () => {
+    //
+  };
+
+  const handleTrain = () => {
+    //
+  };
+
+  const handleSettings = () => {
+    //
+  };
+
   // Itens do menu lateral
-  const drawerItems = [
-    { text: 'New Model', icon: <Add />, onSelect: () => { } },
-    { text: 'Save Model', icon: <Save />, onSelect: () => { } },
-    { text: 'Load Model', icon: <FileOpen />, onSelect: () => { } },
+  const drawerItems: DrawerItem[] = [
+    { text: 'New Model', icon: <Add />, onSelect: handleAdd },
+    { text: 'Save Model', icon: <Save />, onSelect: handleSave },
+    { text: 'Load Model', icon: <FileOpen />, onSelect: handleLoad },
     { divider: true },
-    { text: 'New Layer', icon: <LayersIcon />, onSelect: () => { } },
-    { text: 'Datasets', icon: <DatasetIcon />, onSelect: () => { } },
-    { text: 'Train Model', icon: <TrainIcon />, onSelect: () => { } },
+    { text: 'New Layer', icon: <LayersIcon />, onSelect: handleNewLayers },
+    { text: 'Datasets', icon: <DatasetIcon />, onSelect: handleDataset },
+    { text: 'Train Model', icon: <TrainIcon />, onSelect: handleTrain },
     { divider: true },
-    { text: 'Settings', icon: <SettingsIcon />, onSelect: () => { } },
-    { text: 'Help', icon: <HelpIcon />, onSelect: () => { } }
+    { text: 'Settings', icon: <SettingsIcon />, onSelect: handleSettings },
   ];
 
   return (
@@ -153,15 +194,12 @@ export const HomePage: React.FC = () => {
         </Paper>
 
         {/* Conteúdo principal */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            p: "0.5em",
-            flexGrow: 1,
-            width: `100%`,
-          }}
-        >
+        <Box sx={{
+          p: "0.5em",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+        }} >
           <Toolbar />
 
           {/* Área do fluxograma (central) */}
@@ -173,12 +211,29 @@ export const HomePage: React.FC = () => {
             justifyContent: 'center',
             backgroundColor: 'background.default',
           }} >
-            <Typography variant="h6" color="text.secondary">
-              Fluxograma para construção da RNA aparecerá aqui
-            </Typography>
+            {layers.length === 0 ? <Skeleton sx={{ width: "100%", height: "100%" }} /> :
+              <Fluxograma onHelp={handleHelp} />}
           </Paper>
 
         </Box>
+
+        {/* Ajuda */}
+        {helpText && <Box sx={{ p: "0.5em", width: "45%", height: "100vh" }}>
+          <Toolbar />
+          <Paper sx={{ py: "0.5em", height: "91%", position: "relative" }}>
+
+            <Tooltip title="Fechar Ajuda" sx={{ position: 'absolute', top: "0.5em", right: "0.5em", zIndex: 2 }}>
+              <IconButton onClick={() => setHelpText(undefined)}>
+                <Close />
+              </IconButton>
+            </Tooltip>
+
+            <LayerHelp
+              key={helpText}
+              startText={helpText}
+            />
+          </Paper>
+        </Box>}
       </Box>
     </Paper>
   );

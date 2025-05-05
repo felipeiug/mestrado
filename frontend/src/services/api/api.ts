@@ -1,3 +1,4 @@
+import { ApiLayers } from "./layers";
 import { ApiLogin } from "./login";
 import { ApiUniversity } from "./universidade";
 import { ApiUser } from "./user";
@@ -15,6 +16,7 @@ export interface ApiSchema {
   user: typeof ApiUser;
   login: typeof ApiLogin;
   university: typeof ApiUniversity;
+  layers: typeof ApiLayers;
   baseUrl: string;
 }
 
@@ -24,6 +26,7 @@ export function useApi(): ApiSchema {
     user: ApiUser,
     login: ApiLogin,
     university: ApiUniversity,
+    layers: ApiLayers,
     baseUrl: `${import.meta.env.REACT_APP_URL}`,
   };
 }

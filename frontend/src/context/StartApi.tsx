@@ -3,7 +3,7 @@ import axios, { AxiosRequestConfig } from "axios";
 // Fução API
 export const StartApi: React.FC<Props> = ({ children }) => {
 
-  axios.defaults.withCredentials = true;
+  // axios.defaults.withCredentials = true;
 
   axios.interceptors.request.use(
     (config) => {

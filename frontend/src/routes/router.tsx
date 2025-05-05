@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, BrowserRouter, Navigate } from 'react-router-dom';
 import { ForgotPassword, Login, Register, ResetPassword } from '../pages';
 import { HomePage } from '../pages/home';
+import { LayersProvider } from '../context/LayersContext';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -21,9 +22,11 @@ export const AppRoutes: React.FC = () => {
 function LoggedApp() {
   return (
     // <UserProvider>
-    <Routes>
-      <Route path="/home" element={<HomePage />} />
-    </Routes>
+    <LayersProvider>
+      <Routes>
+        <Route path="/home" element={<HomePage />} />
+      </Routes>
+    </LayersProvider>
     // </UserProvider>
   );
 }
