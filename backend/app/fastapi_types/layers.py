@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 import torch.nn as nn
 
 class Linear(BaseModel):
+    name: str = "Linear"
     desc: str = """
 ## Camada Linear (`nn.Linear`)
 
@@ -54,6 +55,7 @@ output = layer(input_data)  # Formato: (32, 128)
         )
 
 class Conv1d(BaseModel):
+    name: str = "Conv1d"
     desc: str = """
 ## Camada Conv1D (`nn.Conv1d`)
 
@@ -96,6 +98,7 @@ Cada filtro:
         )
 
 class Conv2d(BaseModel):
+    name: str = "Conv2d"
     desc: str = """
 ## Camada de Convolução 2D (`nn.Conv2d`)
 
@@ -164,6 +167,7 @@ output = conv_layer(input_images)  # Saída: (16, 64, 128, 128)
         )
 
 class LSTM(BaseModel):
+    name: str = "LSTM"
     desc: str = """
 ## Camada LSTM (`nn.LSTM`)
 
@@ -231,6 +235,7 @@ input → LSTM_Camada1 → LSTM_Camada2 → LSTM_Camada3 → output
         )
 
 class Dropout(BaseModel):
+    name: str = "Dropout"
     desc: str = """
     Técnica de regularização que "desliga" aleatoriamente neurônios durante o treinamento.
     Previne que a rede neural dependa demais de poucos neurônios específicos.
@@ -245,6 +250,7 @@ class Dropout(BaseModel):
         return nn.Dropout(p=self.p)
 
 class BatchNorm2d(BaseModel):
+    name: str = "BatchNorm2d"
     desc: str = """
     Normaliza os dados entre camadas para manter a escala consistente durante o treinamento.
     Equivale a colocar todos os recursos na mesma "régua" antes de processar.
@@ -259,6 +265,7 @@ class BatchNorm2d(BaseModel):
         return nn.BatchNorm2d(num_features=self.num_features)
 
 class MultiheadAttention(BaseModel):
+    name: str = "MultiheadAttention"
     desc: str = """
     Mecanismo de atenção que permite ao modelo focar em partes diferentes da entrada simultaneamente.
     Como um time de especialistas onde cada um analisa um aspecto diferente dos dados.
@@ -277,6 +284,7 @@ class MultiheadAttention(BaseModel):
         )
 
 class ReLU(BaseModel):
+    name: str = "ReLU"
     desc: str = """
 # ReLU (Rectified Linear Unit)
 **Fórmula**: `max(0, x)`
@@ -291,6 +299,7 @@ class ReLU(BaseModel):
         return nn.ReLU(inplace=self.inplace)
 
 class Sigmoid(BaseModel):
+    name: str = "Sigmoid"
     desc: str = """
 # Sigmoid
 **Fórmula**: `1 / (1 + exp(-x))`
@@ -304,6 +313,7 @@ class Sigmoid(BaseModel):
         return nn.Sigmoid()
 
 class Tanh(BaseModel):
+    name: str = "Tanh"
     desc: str = """
 # Tanh (Tangente Hiperbólica)
 **Fórmula**: `(exp(x) - exp(-x)) / (exp(x) + exp(-x))`
@@ -317,6 +327,7 @@ class Tanh(BaseModel):
         return nn.Tanh()
 
 class LeakyReLU(BaseModel):
+    name: str = "LeakyReLU"
     desc: str = """
 # LeakyReLU
 **Fórmula**: `max(αx, x)` onde α é pequeno (ex: 0.01)
@@ -334,6 +345,7 @@ class LeakyReLU(BaseModel):
         )
 
 class GELU(BaseModel):
+    name: str = "GELU"
     desc: str = """
 # GELU (Gaussian Error Linear Unit)
 **Fórmula**: `x * Φ(x)` (onde Φ é a CDF da distribuição normal)
@@ -347,6 +359,7 @@ class GELU(BaseModel):
         return nn.GELU()
 
 class SiLU(BaseModel):
+    name: str = "SiLU"
     desc: str = """
 # SiLU (Sigmoid-Weighted Linear Unit)
 **Fórmula**: `x * sigmoid(x)`
@@ -360,6 +373,7 @@ class SiLU(BaseModel):
         return nn.SiLU()
 
 class Softmax(BaseModel):
+    name: str = "Softmax"
     desc: str = """
 # Softmax
 **Fórmula**: `exp(x_i) / Σ(exp(x_j))`
@@ -374,6 +388,7 @@ class Softmax(BaseModel):
         return nn.Softmax(dim=self.dim)
 
 class MoE(BaseModel):
+    name: str = "MoE"
     desc: str = """
 ## 🧠 Mixture of Experts (MoE) - O que é?
 
