@@ -150,6 +150,7 @@ class Infiltrometro:
     def K(self, point:str|None = None):
         """Retorna o dataframe com a condutividade hidráulica do solo, contém os pontos com cálculo"""
 
+        #TODO: Verificar qual utilizar, Zhang ou Dohnal tem indicações deles
         mask, df = self.A2(point)
         df["K_Zhang"] = self.infiltrations[mask]["C2"]/df["A2_Zhang"]
         df["K_Dohnal"] = np.where(df["A2_Dohnal"].values!=None, self.infiltrations[mask]["C2"]/df["A2_Dohnal"], None)
@@ -298,6 +299,8 @@ class Infiltrometro:
         values = np.where(mask_choose, values[0], values[1])
         maximo = np.ceil(np.ceil(values.max()*100)/5)*5/100
         percents = values/maximo
+        percents = np.where(percents>1, 1, percents)
+        percents = np.where(percents<0, 0, percents)
 
         # Exibir no gráfico
         colors = self._get_gradient_color(percents, np.array([1, 0.7843, 0.3569]), np.array([0.4706, 0.3137, 0]))

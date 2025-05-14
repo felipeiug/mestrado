@@ -1,3 +1,7 @@
+from app.start_infiltrometro import *
+
+exit(0)
+
 # %% Variáveis de ambiente
 import os
 os.system('cls' if os.name == 'nt' else 'clear')
