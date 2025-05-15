@@ -150,10 +150,10 @@ class Infiltrometro:
     def K(self, point:str|None = None):
         """Retorna o dataframe com a condutividade hidráulica do solo, contém os pontos com cálculo"""
 
-        #TODO: Verificar qual utilizar, Zhang ou Dohnal tem indicações deles
+        #TODO: Verificar qual utilizar, C2 ou C1
         mask, df = self.A2(point)
-        df["K_Zhang"] = self.infiltrations[mask]["C2"]/df["A2_Zhang"]
-        df["K_Dohnal"] = np.where(df["A2_Dohnal"].values!=None, self.infiltrations[mask]["C2"]/df["A2_Dohnal"], None)
+        denominador = np.where(df["A2_Dohnal"].values!=None, df["A2_Dohnal"], df["A2_Zhang"])
+        df["K"] = self.infiltrations[mask]["C2"]/denominador
 
         return df
     
@@ -292,11 +292,8 @@ class Infiltrometro:
 
         # Infiltração
         values = self.K()
-        values = np.array([pd.to_numeric(values["K_Zhang"], errors="coerce"), pd.to_numeric(values["K_Dohnal"], errors="coerce")])
+        values = values["K"]
 
-        mask_choose = np.isnan(values[1]) | (values[0] > values[1])
-
-        values = np.where(mask_choose, values[0], values[1])
         maximo = np.ceil(np.ceil(values.max()*100)/5)*5/100
         percents = values/maximo
         percents = np.where(percents>1, 1, percents)
