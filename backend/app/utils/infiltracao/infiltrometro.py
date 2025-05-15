@@ -70,6 +70,12 @@ class Infiltrometro:
             I_data = np.array(pd.to_numeric(ponto[2:23], errors="coerce"))
             mask = ~np.isnan(I_data)
 
+            #Deixando apenas o primeiro 0
+            indices_zeros = np.where(I_data <= 0)[0]
+            if len(indices_zeros) > 0:
+                primeiro_zero_idx = indices_zeros[0]
+                mask[primeiro_zero_idx+1:] = False
+
             # Substituindo os valores nulos pelos valores reais
             I_data[~mask] = I_data[mask][-1]
             for i, colum_time in enumerate(columns_time):
@@ -79,23 +85,30 @@ class Infiltrometro:
             if not mask.any():
                 continue
             
-            # Valor de C1, C2 3 a covariancia entre eles
+            # Valor de C1, C2 e a covariancia entre eles
             C1 = None
             index_mask = 1
             while C1 is None or C1 < 0:
+                if ponto.Ponto == "P29":
+                    print(mask)
+
                 infiltrado = (I_data[mask][0]-I_data[mask])/(np.pi*np.power(self.disk_diameter/2, 2))
                 C1, C2, covariance = self._aproximate_C1_C2(times[mask], infiltrado)
-
+                
                 if C1 < 0:
                     mask[index_mask] = False
                     index_mask += 1
 
             # Atualizando o DataFrame com os valores novos de C1, C2 e COV_C1_C2
-            self.infiltrations[columns_time[~mask]] = np.nan
+
             self.infiltrations.at[index, "C1"] = C1
             self.infiltrations.at[index, "C2"] = C2
             self.infiltrations.at[index, "COV_C1_C2"] = covariance
-
+            
+            # Colocando as colunas removidas como NaN
+            for col in columns_time[~mask]:
+                self.infiltrations.at[index, col] = np.nan
+            
     def _taxa_infilt(self):
         columns_time = COLUMNS_INFILTRATION[1:22]
 
@@ -292,7 +305,7 @@ class Infiltrometro:
 
         # Infiltração
         values = self.K()
-        values = values["K"]
+        values = values["K (C1)"]
 
         maximo = np.ceil(np.ceil(values.max()*100)/5)*5/100
         percents = values/maximo
