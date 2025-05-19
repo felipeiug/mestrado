@@ -1,6 +1,5 @@
-from app.start_infiltrometro import *
-
-exit(0)
+# from app.start_infiltrometro import *
+# exit(0)
 
 # %% Variáveis de ambiente
 import os
