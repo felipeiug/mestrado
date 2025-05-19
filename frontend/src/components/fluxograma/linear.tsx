@@ -6,15 +6,11 @@ import { LayerType, Linear } from '../../core';
 import { useState } from 'react';
 import { BaseNode } from './baseNode';
 
-type Props = {
-  onProperties?: (value: Linear) => void;
-  onHelp?: (value: "Linear") => void;
-};
 
-export function LinearLayer(nodeData: Node<Linear & Props>) {
+export function LinearLayer(nodeData: Node<Linear>) {
   const color = "rgb(175, 214, 46)";
 
-  const nodes = useNodes<Node<LayerType & Props>>();
+  const nodes = useNodes<Node<LayerType>>();
   const edges = useEdges();
 
   const [state, setState] = useState(false);
@@ -48,8 +44,6 @@ export function LinearLayer(nodeData: Node<Linear & Props>) {
 
     onConnection={handleConnect}
     validateConnection={validateConnection}
-
-    onHelp={() => nodeData.data.onHelp && nodeData.data.onHelp("Linear")}
   >
     <Timeline sx={{ fontSize: 22, color: color }} />
     <div style={{

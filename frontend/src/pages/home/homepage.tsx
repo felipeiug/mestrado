@@ -29,10 +29,11 @@ import {
   FileOpen,
   Close
 } from '@mui/icons-material';
-import { Fluxograma, LayerHelp } from '../../components';
+import { Fluxograma, LayerEdit, LayerHelp } from '../../components';
 import { useLayers } from '../../context/LayersContext';
-import { LayerTypeName } from '../../core';
+import { LayerBase, LayerTypeName } from '../../core';
 import { useLoading } from '../../context';
+import { ReactFlowProvider } from '@xyflow/react';
 
 interface DrawerItem {
   divider?: boolean;
@@ -47,6 +48,7 @@ export const HomePage: React.FC = () => {
   const setLoading = useLoading();
 
   const [helpText, setHelpText] = useState<string>();
+  const [layerEdit, setLayerEdit] = useState<LayerBase>();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
@@ -60,6 +62,11 @@ export const HomePage: React.FC = () => {
       }
     }
   };
+
+  const handleType = (layer: LayerBase) => {
+    setHelpText(undefined);
+    setLayerEdit(layer);
+  }
 
   const handleDrawerToggle = () => {
     setDrawerOpen(!drawerOpen);
@@ -212,9 +219,11 @@ export const HomePage: React.FC = () => {
             backgroundColor: 'background.default',
           }} >
             {layers.length === 0 ? <Skeleton sx={{ width: "100%", height: "100%" }} /> :
-              <Fluxograma onHelp={handleHelp} />}
+              <ReactFlowProvider>
+                <Fluxograma onHelp={handleHelp} onProperties={handleType} />
+              </ReactFlowProvider>
+            }
           </Paper>
-
         </Box>
 
         {/* Ajuda */}
@@ -222,7 +231,7 @@ export const HomePage: React.FC = () => {
           <Toolbar />
           <Paper sx={{ py: "0.5em", height: "91%", position: "relative" }}>
 
-            <Tooltip title="Fechar Ajuda" sx={{ position: 'absolute', top: "0.5em", right: "0.5em", zIndex: 2 }}>
+            <Tooltip title="Close Help" sx={{ position: 'absolute', top: "0.5em", right: "0.5em", zIndex: 2 }}>
               <IconButton onClick={() => setHelpText(undefined)}>
                 <Close />
               </IconButton>
@@ -231,6 +240,23 @@ export const HomePage: React.FC = () => {
             <LayerHelp
               key={helpText}
               startText={helpText}
+            />
+          </Paper>
+        </Box>}
+
+        {/* Editar propriedades */}
+        {layerEdit && <Box sx={{ p: "0.5em", width: "45%", height: "100vh" }}>
+          <Toolbar />
+          <Paper sx={{ py: "0.5em", height: "91%", position: "relative" }}>
+
+            <Tooltip title="Close Properties" sx={{ position: 'absolute', top: "0.5em", right: "0.5em", zIndex: 2 }}>
+              <IconButton onClick={() => setLayerEdit(undefined)}>
+                <Close />
+              </IconButton>
+            </Tooltip>
+
+            <LayerEdit
+              layer={layerEdit}
             />
           </Paper>
         </Box>}

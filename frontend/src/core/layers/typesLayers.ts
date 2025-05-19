@@ -2,11 +2,11 @@ export type LayerTypeName = 'MoE' | 'Linear' | 'Conv1d' | 'Conv2d' | 'LSTM' | 'D
 
 export type LayerBase = {
   name: LayerTypeName;
-  desc: string;
+  desc?: string;
   inShape: number[];
   outShape: number[];
-  validateInShape: (shape:number[]) => boolean;
-  validateOutShape: (shape:number[]) => boolean;
+  validateInShape: (shape: number[]) => boolean;
+  validateOutShape: (shape: number[]) => boolean;
 }
 
 export type Linear = LayerBase & {

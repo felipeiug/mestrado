@@ -1,6 +1,4 @@
-import { Box, Menu, MenuItem, Paper, Typography, useTheme } from '@mui/material';
-import { useState } from 'react';
-import { ContentCopy, Delete, Help, Settings } from '@mui/icons-material';
+import { Box, Paper, Typography, useTheme } from '@mui/material';
 import { Handle, IsValidConnection, OnConnect, Position } from '@xyflow/react';
 
 interface Props {
@@ -17,23 +15,12 @@ interface Props {
 
   onConnection?: OnConnect;
   validateConnection?: IsValidConnection;
-
-  onHelp?: () => void;
-  onClick?: () => void;
-  onRemove?: () => void;
-  onDuplicate?: () => void;
-  onProperties?: () => void;
 }
 
 export const BaseNode: React.FC<Props> = ({
   title,
   validateConnection,
   onConnection,
-  onProperties,
-  onRemove,
-  onDuplicate,
-  onHelp,
-  onClick,
   color,
   children,
   inShape,
@@ -43,73 +30,7 @@ export const BaseNode: React.FC<Props> = ({
 }) => {
   const theme = useTheme();
 
-  const [contextMenu, setContextMenu] = useState<{
-    mouseX: number;
-    mouseY: number;
-  } | null>(null);
-
-  const handleItemRightClick = (event: React.MouseEvent) => {
-    event.preventDefault();
-    setContextMenu({
-      mouseX: event.clientX,
-      mouseY: event.clientY,
-    });
-  };
-
-  const handleClose = () => {
-    setContextMenu(null);
-  };
-
   return <>
-
-    <Menu
-      open={contextMenu !== null}
-      onClose={handleClose}
-      anchorReference="anchorPosition"
-      anchorPosition={
-        contextMenu !== null
-          ? { top: contextMenu.mouseY, left: contextMenu.mouseX }
-          : undefined
-      }
-    >
-
-      <MenuItem
-        onClick={() => {
-          if (onDuplicate) onDuplicate();
-          handleClose();
-        }}
-      >
-        <Item title={"Create a Copy"} icon={<ContentCopy />} />
-      </MenuItem>
-
-      <MenuItem
-        onClick={() => {
-          if (onProperties) onProperties();
-          handleClose();
-        }}
-      >
-        <Item title={"Properties"} icon={<Settings />} />
-      </MenuItem>
-
-      <MenuItem
-        onClick={() => {
-          if (onHelp) onHelp();
-          handleClose();
-        }}
-      >
-        <Item title={"Help"} icon={<Help />} />
-      </MenuItem>
-
-      <MenuItem
-        onClick={() => {
-          if (onRemove) onRemove();
-          handleClose();
-        }}
-      >
-        <Item title={"Delete"} icon={<Delete />} />
-      </MenuItem>
-
-    </Menu>
 
     {/* Handle de entrada */}
     {inShape && inShape.map((_, idx) => <Handle
@@ -145,8 +66,6 @@ export const BaseNode: React.FC<Props> = ({
 
     {/* Conteúdo */}
     <Box
-      onClick={onClick}
-      onContextMenu={handleItemRightClick}
       sx={{
         gap: "1px",
         width: width ?? 46,
@@ -190,23 +109,3 @@ export const BaseNode: React.FC<Props> = ({
     </Box>
   </>;
 };
-
-interface ItemProps {
-  title: string;
-  icon?: React.ReactNode;
-}
-const Item: React.FC<ItemProps> = ({ title, icon }) => {
-  return <div
-    style={{
-      flex: 1,
-      gap: "1em",
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "space-between",
-    }}>
-    <Typography>
-      {title}
-    </Typography>
-    {icon}
-  </div>;
-}
