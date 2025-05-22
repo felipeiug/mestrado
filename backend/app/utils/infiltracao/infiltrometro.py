@@ -48,7 +48,7 @@ class Infiltrometro:
 
         self._calculate_C1_C2()
         self._taxa_infilt()
-        self._horton_params()
+        # self._horton_params()
         self.infiltrations["Soil Type"] = calculate_soil_type(self.infiltrations["Sand"], self.infiltrations["Clay"])
 
     def _mask(self, point:str|None = None):
@@ -179,8 +179,6 @@ class Infiltrometro:
             self.infiltrations.at[index, "H_fc"] = params['fc']
             self.infiltrations.at[index, "H_fo"] = params['fo']
             self.infiltrations.at[index, "H_k"]  = params['k']
-        
-        self.infiltrations.to_excel("taxa_inf.xlsx")
 
 
     def _equation_infiltration(self, t:float, C1:np.ndarray, C2:np.ndarray):
