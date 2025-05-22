@@ -1,4 +1,5 @@
 tipo_uso = {
+    0: "No Data",
     1: "Canga",
     2: "Vegetação Rasteira",
     3: "Industrial",

@@ -1,11 +1,14 @@
 from app.utils import *
 import matplotlib.pyplot as plt
 
-file = f"D:/Mestrado/Trabalho Final/Dados/Levantamento em Campo/DadosInfiltracao.zip"
-data = gpd.read_file(file)
+path_infiltracao = "D:/Mestrado/Trabalho Final/SIG/DadosInfiltracao.zip"
+path_mdt = "D:/Mestrado/Trabalho Final/SIG\MDT.tif"
+path_uso_solo = "D:/Mestrado/Trabalho Final/SIG/USOSOLO.tif"
+
+dados_infiltracao = gpd.read_file(path_infiltracao)
 
 # Inicializando a classe
-infiltrometro = Infiltrometro(data)
+infiltrometro = Infiltrometro(dados_infiltracao)
 
 Infiltrado = infiltrometro.Infiltrado("10:00")
 

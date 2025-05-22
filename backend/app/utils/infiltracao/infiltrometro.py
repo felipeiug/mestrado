@@ -48,7 +48,7 @@ class Infiltrometro:
 
         self._calculate_C1_C2()
         self._taxa_infilt()
-        # self._horton_params()
+        # self._horton_params() Apenas quando precisar ajustar os dados.
         self.infiltrations["Soil Type"] = calculate_soil_type(self.infiltrations["Sand"], self.infiltrations["Clay"])
 
     def _mask(self, point:str|None = None):
