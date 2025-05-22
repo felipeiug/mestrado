@@ -10,6 +10,7 @@ from matplotlib.cm import ScalarMappable
 
 from ..consts import *
 from .raster_data import GenerateRaster
+from .adjust_horton import adjust_horton
 from ..soil_texture import calculate_soil_type
 from ..soil_texture import plot_soil_texture_classes
 
@@ -47,6 +48,7 @@ class Infiltrometro:
 
         self._calculate_C1_C2()
         self._taxa_infilt()
+        self._horton_params()
         self.infiltrations["Soil Type"] = calculate_soil_type(self.infiltrations["Sand"], self.infiltrations["Clay"])
 
     def _mask(self, point:str|None = None):
@@ -105,10 +107,6 @@ class Infiltrometro:
             self.infiltrations.at[index, "C2"] = C2
             self.infiltrations.at[index, "COV_C1_C2"] = covariance
             
-            # Colocando as colunas removidas como NaN
-            for col in columns_time[~mask]:
-                self.infiltrations.at[index, col] = np.nan
-            
     def _taxa_infilt(self):
         columns_time = COLUMNS_INFILTRATION[1:22]
 
@@ -144,14 +142,62 @@ class Infiltrometro:
         (c1, c2), covariance = curve_fit(self._equation_infiltration, t, I)
         return c1, c2, covariance
 
-    def _equation_infiltration(self, t:float, C1:np.ndarray, C2:np.ndarray):
-        return C1 * np.sqrt(t) + C2*t
-
     def _get_gradient_color(self, percent:np.ndarray, start_color:np.ndarray, end_color:np.ndarray):
         """Retorna as cores interpoladas:`array(N, (r, g, b))` entre start_color:`array(r, g, b)` e end_color:`array(r, g, b)` baseada na porcentagem:`array(N)`."""
         colors = start_color + (end_color - start_color) * percent[:, np.newaxis]
         return colors
     
+    def _horton_params(self):
+        columns_time = np.array(COLUMNS_INFILTRATION[1:22])
+
+        times = (np.array([int(i.split("_")[0])*60 + int(i.split("_")[1]) for i in columns_time]))/60
+        tempos = times[1:]
+
+        area_reservoir = np.power((self.total_diameter*10E-2), 2)*np.pi/4 # Em m²
+
+        for ponto in self.infiltrations.itertuples():
+            index = ponto.Index
+            
+            # Valor da infiltração nos dados do ponto para os tempos com dados
+            I_data = np.array(pd.to_numeric(ponto[2:23], errors="coerce"))
+            mask = ~np.isnan(I_data)
+
+            # Caso não tenha nenhum valor de infiltração
+            if not mask.any():
+                continue
+            
+            # Ajuste Horton
+            I_roll = np.roll(I_data, 1)
+
+            I_ml_30s = I_roll[1:] - I_data[1:]
+            I_m3_1h = (I_ml_30s*1E-6)/(30/3600)
+            I_m_1h = (I_m3_1h*1E-6)/area_reservoir
+            I_cm_1h = I_m_1h * 100
+
+            params = adjust_horton(I_cm_1h, tempos[mask[1:]], N_particulas=1000, N_iteracoes=1000)
+
+            self.infiltrations.at[index, "H_fc"] = params['fc']
+            self.infiltrations.at[index, "H_fo"] = params['fo']
+            self.infiltrations.at[index, "H_k"]  = params['k']
+        
+        self.infiltrations.to_excel("taxa_inf.xlsx")
+
+
+    def _equation_infiltration(self, t:float, C1:np.ndarray, C2:np.ndarray):
+        return C1 * np.sqrt(t) + C2*t
+
+    def _horton_equation(self, t, fc, fo, Fc):
+        '''Retorna o valor da curva de infiltração pela equação de Horton para um dado valor de `fc`, `fo`, `Fc` e `t`
+        Onde:
+
+        - fc é a taxa de infiltração final (cm/h)
+        - fo é a taxa de infiltração inicial (cm/h)
+        - Fc é a Área sob o gráfico e maior que a reta fc
+        '''
+        k = (fo - fc)/Fc
+        return fc+(fo-fc)*np.exp(-k*t)
+
+
     def Infiltrado(self, t:str):
         """Retorna o volume infiltrado par um t [00:00] de 0 a 10 segundos"""
         vol_init = self.infiltrations["00_00"]
