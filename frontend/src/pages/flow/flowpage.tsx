@@ -42,7 +42,7 @@ interface DrawerItem {
   onSelect?: () => void;
 }
 
-export const HomePage: React.FC = () => {
+export const FlowPage: React.FC = () => {
   const theme = useTheme();
   const layers = useLayers();
   const setLoading = useLoading();
@@ -164,7 +164,7 @@ export const HomePage: React.FC = () => {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            NeuroDepp
+            FlowTorch
           </Typography>
           <IconButton color="inherit">
             <AccountIcon />

@@ -10,8 +10,8 @@ export const DarkTheme = createTheme({
       main: 'rgb(192, 77, 24)', // Laranja avermelhado
     },
     background: {
-      default: 'rgb(51, 25, 14)', // Marrom bem escuro
-      paper: 'rgb(74, 37, 21)',
+      default: 'rgb(29, 29, 29)', // Marrom bem escuro
+      paper: 'rgb(0, 0, 0)',
     },
     text: {
       primary: 'rgb(244, 212, 180)', // Bege claro

@@ -10,7 +10,7 @@ export const LightTheme = createTheme({
       main: 'rgb(138, 68, 31)', // Marrom-alaranjado
     },
     background: {
-      default: 'rgb(244, 212, 180)', // Bege
+      default: 'rgb(240, 240, 240)', // Bege
       paper: 'rgb(255, 255, 255)',
     },
     text: {
