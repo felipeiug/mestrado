@@ -3,9 +3,9 @@ import { MyError, User } from "../../context";
 
 const url = `${import.meta.env.VITE_URL}/login`;
 
-const login = async (email: string, password: string): Promise<{ token: string; } | MyError> => {
+const login = async (email: string, password: string): Promise<{ token: string; token_type: string; } | MyError> => {
   try {
-    const data: AxiosResponse<{ token: string; }> = await axios.post(
+    const data: AxiosResponse<{ token: string; token_type: string; }> = await axios.post(
       `${url}`,
       {
         'email': email,
@@ -63,9 +63,9 @@ const sendResetCode = async (email: string): Promise<{ ok: boolean; } | MyError>
   }
 };
 
-const changePassw = async (password: string, token: string): Promise<{ token: string; } | MyError> => {
+const changePassw = async (password: string, token: string): Promise<{ token: string; token_type: string; } | MyError> => {
   try {
-    const data: AxiosResponse<{ token: string; }> = await axios.post(
+    const data: AxiosResponse<{ token: string; token_type: string; }> = await axios.post(
       `${url}/change_password`,
       {
         'token': token,
@@ -90,9 +90,9 @@ export interface UserWithPasswords extends User {
   password: string;
   confirmPassword?: string;
 }
-const newUser = async (user: UserWithPasswords): Promise<{ token: string; } | MyError> => {
+const newUser = async (user: UserWithPasswords): Promise<{ token: string; token_type: string; } | MyError> => {
   try {
-    const data: AxiosResponse<{ token: string; }> = await axios.post(
+    const data: AxiosResponse<{ token: string; token_type: string; }> = await axios.post(
       `${url}/new`,
       user,
     );

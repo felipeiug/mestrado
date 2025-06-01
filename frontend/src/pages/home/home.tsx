@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   Container,
-  Link,
   useTheme,
   useMediaQuery,
   AppBar,
@@ -17,13 +16,26 @@ import {
 } from '@mui/material';
 import { Cloud, Code, Extension, SwapHorizontalCircle } from '@mui/icons-material';
 import Logo from "../../assets/logo.jpg";
+import { useNavigate } from 'react-router-dom';
 
 export const HomePage: React.FC = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const nUsers = 10045;
 
-  const handleStart = () => { };
+  const handleStart = () => {
+    navigate("/app/projects");
+  };
+  const handleExamples = () => {
+    navigate("/app/examples");
+  };
+  const handleDocs = () => {
+    navigate("/app/docs");
+  };
+  const handleCommunity = () => {
+    navigate("/community");
+  };
 
   return (
     <Box
@@ -59,15 +71,15 @@ export const HomePage: React.FC = () => {
 
           <Box sx={{ display: 'flex', flex: 1, justifyContent: 'flex-end', gap: 4 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Link href="/app/docs" sx={{ color: 'secondary.main', fontSize: 14, fontWeight: 'medium', textDecoration: 'none' }}>
+              <Button variant='text' onClick={handleDocs} sx={{ color: 'secondary.main', fontSize: 14, fontWeight: 'medium', textDecoration: 'none' }}>
                 {isMobile ? "Docs" : "Documentation"}
-              </Link>
-              <Link href="/app/examples" sx={{ color: 'secondary.main', fontSize: 14, fontWeight: 'medium', textDecoration: 'none' }}>
+              </Button>
+              <Button variant='text' onClick={handleExamples} sx={{ color: 'secondary.main', fontSize: 14, fontWeight: 'medium', textDecoration: 'none' }}>
                 Examples
-              </Link>
-              <Link href="/community" sx={{ color: 'secondary.main', fontSize: 14, fontWeight: 'medium', textDecoration: 'none' }}>
+              </Button>
+              <Button variant='text' onClick={handleCommunity} sx={{ color: 'secondary.main', fontSize: 14, fontWeight: 'medium', textDecoration: 'none' }}>
                 Community
-              </Link>
+              </Button>
             </Box>
             <Button
               onClick={handleStart}
@@ -131,7 +143,7 @@ export const HomePage: React.FC = () => {
                   `,
                 }}
               >
-                Build and Deploy Pytorch Models Visually
+                Build and Train ANN Models Visually
               </Typography>
               <Typography
                 variant="subtitle1"
@@ -147,7 +159,7 @@ export const HomePage: React.FC = () => {
                   `,
                 }}
               >
-                FlowTorch is a no-code/low-code platform that empowers you to create and deploy Pytorch models using intuitive flowcharts.
+                FlowTorch is a no-code/low-code platform that empowers you to create and train Artificial Neural Networks models using intuitive flowcharts.
               </Typography>
             </Box>
             <Button

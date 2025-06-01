@@ -5,7 +5,6 @@ import {
   Button,
   Grid,
   Card,
-  Link,
   useTheme,
   useMediaQuery,
   AppBar,
@@ -17,12 +16,25 @@ import {
 } from '@mui/material';
 import Logo from "../../assets/logo.jpg";
 import { ParticleGraph } from '../../components/randomANN';
+import { useNavigate } from 'react-router-dom';
 
 export const ExamplesPage: React.FC = () => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const handleStart = () => { };
+  const handleStart = () => {
+    navigate("/app/projects");
+  };
+  const handleHome = () => {
+    navigate("/app/home");
+  };
+  const handleDocs = () => {
+    navigate("/app/docs");
+  };
+  const handleCommunity = () => {
+    navigate("/community");
+  };
 
   return (
     <Box
@@ -59,15 +71,15 @@ export const ExamplesPage: React.FC = () => {
 
           <Box sx={{ display: 'flex', flex: 1, justifyContent: 'flex-end', gap: 4 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Link href="/app/home" sx={{ color: 'secondary.main', fontSize: 14, fontWeight: 'medium', textDecoration: 'none' }}>
+              <Button variant='text' onClick={handleHome} sx={{ color: 'secondary.main', fontSize: 14, fontWeight: 'medium', textDecoration: 'none' }}>
                 Home
-              </Link>
-              <Link href="/app/docs" sx={{ color: 'secondary.main', fontSize: 14, fontWeight: 'medium', textDecoration: 'none' }}>
+              </Button>
+              <Button variant='text' onClick={handleDocs} sx={{ color: 'secondary.main', fontSize: 14, fontWeight: 'medium', textDecoration: 'none' }}>
                 {isMobile ? "Docs" : "Documentation"}
-              </Link>
-              <Link href="/community" sx={{ color: 'secondary.main', fontSize: 14, fontWeight: 'medium', textDecoration: 'none' }}>
+              </Button>
+              <Button variant='text' onClick={handleCommunity} sx={{ color: 'secondary.main', fontSize: 14, fontWeight: 'medium', textDecoration: 'none' }}>
                 Community
-              </Link>
+              </Button>
             </Box>
             <Button
               onClick={handleStart}
