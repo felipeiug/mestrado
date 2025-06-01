@@ -17,3 +17,4 @@ from app.fastapi_types.layers import (
     LayerType,
 )
 from app.fastapi_types.paginate import Paginate
+from app.fastapi_types.user import UserType
