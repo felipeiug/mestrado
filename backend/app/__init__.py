@@ -25,11 +25,32 @@ app.add_middleware(
 )
 
 app.include_router(routes.layers)
+app.include_router(routes.login_route)
 
 # %% Bando de dados
-from app.models.database import Base, engine
+from app.models.database import Base, engine, SessionLocal
+from app.models import User
 
 # Criando as tabelas do DB
 os.makedirs("./DB", exist_ok=True)
 Base.metadata.create_all(bind=engine)
+
+# Adicionando o User ADM
+db = SessionLocal()  # Cria uma única sessão
+try:
+    adm = db.query(User).filter((User.email == os.getenv("ADM_EMAIL"))).first()
+
+    if not adm:
+        adm = User(
+            name="MASTER ADM",
+            email=os.getenv("ADM_EMAIL"),
+            admin=True,
+            validEmail=True,
+        )
+        adm.set_password(os.getenv("ADM_PASSW"))
+        db.add(adm)  # Adiciona explicitamente à sessão
+        db.commit()  # Faz commit da sessão atual
+finally:
+    db.close()  # Garante que a sessão será fechada
+
     

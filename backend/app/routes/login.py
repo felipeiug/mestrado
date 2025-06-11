@@ -20,6 +20,7 @@ from datetime import datetime, timedelta, timezone
 from app.models.database import get_db
 from app.models import User
 from app.utils import generate_random_hash
+from app.utils.email_sender import send_code_reset_password
 
 login_route = APIRouter(prefix="/login", tags=["Login"])
 
@@ -104,13 +105,13 @@ async def send_reset_code(form_data: ResetCode, db: Session = Depends(get_db)):
 
     code = generate_random_hash(8)
 
-    # TODO: Adicionar o SMTP
-    print(f"O código para resetar a senha de {form_data.email} é {code}")
+    if send_code_reset_password(code, user.email):
+        user.resetPasswordCode = code
+        db.commit()
 
-    user.resetPasswordCode = code
-    db.commit()
-
-    return {'ok': True}
+        return {'ok': True}
+    
+    raise user_not_found_exception
 
 
 class ResetPassw(BaseModel):
@@ -157,7 +158,9 @@ async def new_user(form_data: UserWithPasswords, db: Session = Depends(get_db)):
     user_data['status'] = True
     user_data['validEmail'] = False
 
+    user_data.pop('id', None)
     user_data.pop('confirmPassword', None)
+    user_data.pop('universityValid', None)
     user_data.pop('insertDate', None)
     user_data.pop('lastLogin', None)
     user_data.pop('updateDate', None)
@@ -167,22 +170,16 @@ async def new_user(form_data: UserWithPasswords, db: Session = Depends(get_db)):
 
     try:
         user = User(**user_data)
-        
-        db.commit()
-        db.refresh(user)
-    except Exception as e:
-        error.detail = f"Erro ao adicionar usuário: {e}"
-        db.rollback()
 
-    try:
         user.set_password(passw)
         user.lastLogin = datetime.now(timezone.utc)
-
+        
+        db.add(user)
         db.commit()
-        db.refresh(user)
     except Exception as e:
         error.detail = f"Erro ao adicionar usuário: {e}"
         db.rollback()
+        raise error
 
     access_token = await create_access_token({"sub": user.email})
     
