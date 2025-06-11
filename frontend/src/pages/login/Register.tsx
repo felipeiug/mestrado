@@ -19,11 +19,17 @@ export const Register = () => {
     name: "",
     email: "",
     password: "",
+    updateBy: "",
     admin: false,
     status: true,
     validEmail: true,
     confirmPassword: "",
+    lastLogin: new Date(),
+    resetPasswordCode: "",
+    universityValid: true,
+    updateDate: new Date(),
     insertDate: new Date(),
+    lastResetPassword: new Date(),
   });
 
   useEffect(() => {
@@ -35,7 +41,7 @@ export const Register = () => {
 
     if (user.password !== user.confirmPassword) {
       setError({
-        error: "Arro ao Criar Usuário",
+        error: "Erro ao Criar Usuário",
         message: 'As senhas não coincidem',
       });
       return;

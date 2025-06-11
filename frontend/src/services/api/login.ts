@@ -18,7 +18,7 @@ const login = async (email: string, password: string): Promise<{ token: string; 
     if (isAxiosError(error)) {
       return {
         error: error.response?.data.error ?? "Erro",
-        message: error.response?.data.message ?? "Erro ao relaizar o login",
+        message: error.response?.data.detail ?? "Erro ao relaizar o login",
       };
     } else {
       throw error;
@@ -35,7 +35,7 @@ const logout = async (): Promise<{ ok: boolean; } | MyError> => {
     if (isAxiosError(error)) {
       return {
         error: error.response?.data.error ?? "Erro",
-        message: error.response?.data.message ?? "Erro ao realizar logout",
+        message: error.response?.data.detail ?? "Erro ao realizar logout",
       };
     } else {
       throw error;
@@ -55,7 +55,7 @@ const sendResetCode = async (email: string): Promise<{ ok: boolean; } | MyError>
     if (isAxiosError(error)) {
       return {
         error: error.response?.data.error ?? "Erro",
-        message: error.response?.data.message ?? "Erro ao enviar código para resetar a senha",
+        message: error.response?.data.detail ?? "Erro ao enviar código para resetar a senha",
       };
     } else {
       throw error;
@@ -78,7 +78,7 @@ const changePassw = async (password: string, token: string): Promise<{ token: st
     if (isAxiosError(error)) {
       return {
         error: error.response?.data.error ?? "Erro",
-        message: error.response?.data.message ?? "Erro ao alterar a senha do usuário",
+        message: error.response?.data.detail ?? "Erro ao alterar a senha do usuário",
       };
     } else {
       throw error;
@@ -102,7 +102,7 @@ const newUser = async (user: UserWithPasswords): Promise<{ token: string; token_
     if (isAxiosError(error)) {
       return {
         error: error.response?.data.error ?? "Erro",
-        message: error.response?.data.message ?? "Erro ao adicionar usuário",
+        message: error.response?.data.detail ?? "Erro ao adicionar usuário",
       };
     } else {
       throw error;
