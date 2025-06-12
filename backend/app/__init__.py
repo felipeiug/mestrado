@@ -26,6 +26,8 @@ app.add_middleware(
 
 app.include_router(routes.layers)
 app.include_router(routes.login_route)
+app.include_router(routes.user_route)
+
 
 # %% Bando de dados
 from app.models.database import Base, engine, SessionLocal

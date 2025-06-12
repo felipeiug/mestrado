@@ -61,8 +61,8 @@ class User(AuditoriaTable, Base):
         return pwd_context.verify(password, self.passwHash)
 
     def to_json(self):
-        return UserType({
-            'id': self.id,
+        return {
+            'id': str(self.id),
             'name': self.name,
             'email': self.email,
             'admin': self.admin,
@@ -76,6 +76,6 @@ class User(AuditoriaTable, Base):
             'updateDate': self.updateDate.isoformat() if self.updateDate is not None else None,
             'insertDate': self.insertDate.isoformat(),
             'updateBy': self.updateBy,
-        })
+        }
 
 
