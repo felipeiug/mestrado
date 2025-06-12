@@ -3,6 +3,7 @@ import { Routes, Route, BrowserRouter, Navigate } from 'react-router-dom';
 import { ExamplesPage, FlowPage, ForgotPassword, HomePage, Login, Register, ResetPassword } from '../pages';
 import { LayersProvider } from '../context/LayersContext';
 import { ProjectsPage } from '../pages/projects';
+import { UserProvider } from '../context';
 
 export const AppRoutes: React.FC = () => {
   return (
@@ -14,6 +15,8 @@ export const AppRoutes: React.FC = () => {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/app/*" element={<LoggedApp />} />
+        <Route path="/home" element={<HomePage />} />
+        <Route path="/examples" element={<ExamplesPage />} />
       </Routes>
     </BrowserRouter>
   );
@@ -21,16 +24,14 @@ export const AppRoutes: React.FC = () => {
 
 function LoggedApp() {
   return (
-    // <UserProvider>
-    <LayersProvider>
-      <Routes>
-        <Route path="/*" element={<Navigate to="/app/home" />} />
-        <Route path="/home" element={<HomePage />} />
-        <Route path="/flow" element={<FlowPage />} />
-        <Route path="/examples" element={<ExamplesPage />} />
-        <Route path="/projects" element={<ProjectsPage />} />
-      </Routes>
-    </LayersProvider>
-    // </UserProvider>
+    <UserProvider>
+      <LayersProvider>
+        <Routes>
+          <Route path="/*" element={<Navigate to="/app/projects" />} />
+          <Route path="/flow" element={<FlowPage />} />
+          <Route path="/projects" element={<ProjectsPage />} />
+        </Routes>
+      </LayersProvider>
+    </UserProvider>
   );
 }

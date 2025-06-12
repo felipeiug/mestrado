@@ -11,7 +11,7 @@ const getUser = async (): Promise<User | MyError> => {
     if (isAxiosError(error)) {
       return {
         error: error.response?.data.error ?? "User Error",
-        message: error.response?.data.message ?? "Erro ao obter os dados do usuário",
+        message: error.response?.data.detail ?? "Erro ao obter os dados do usuário",
       };
     } else {
       throw error;
