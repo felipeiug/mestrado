@@ -1,6 +1,5 @@
 from app.models.database import Base
 from app.models.helper import AuditoriaTable
-from app.fastapi_types import UserType
 
 import uuid
 from sqlalchemy import (
@@ -22,6 +21,7 @@ class User(AuditoriaTable, Base):
     # Controle de acesso
     admin = Column(Boolean, nullable=False, default=False)
     status = Column(Boolean, nullable=False, default=True)
+    lastLogin = Column(DateTime(timezone=True), nullable=True)
 
     # Verificações
     validEmail = Column(Boolean, nullable=False, default=False)
