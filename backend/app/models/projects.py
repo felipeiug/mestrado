@@ -29,7 +29,7 @@ class Project(AuditoriaTable, Base):
             'description': self.description,
             'updateDate': self.updateDate.isoformat() if self.updateDate is not None else None,
             'insertDate': self.insertDate.isoformat(),
-            'updateBy': self.updateBy,
+            'updateBy': str(self.updateBy),
         }
 
         if not without_flow:
@@ -63,7 +63,7 @@ class Flow(AuditoriaTable, Base):
             'edges': [i.to_json() for i in self.edges],
             'updateDate': self.updateDate.isoformat() if self.updateDate is not None else None,
             'insertDate': self.insertDate.isoformat(),
-            'updateBy': self.updateBy,
+            'updateBy': str(self.updateBy),
         }
 
 
@@ -88,7 +88,7 @@ class Node(AuditoriaTable, Base):
             "posY": self.pos_y,
             'updateDate': self.updateDate.isoformat() if self.updateDate is not None else None,
             'insertDate': self.insertDate.isoformat(),
-            'updateBy': self.updateBy,
+            'updateBy': str(self.updateBy),
         }
 
 
@@ -110,5 +110,5 @@ class Edge(AuditoriaTable, Base):
             "target": self.target,
             'updateDate': self.updateDate.isoformat() if self.updateDate is not None else None,
             'insertDate': self.insertDate.isoformat(),
-            'updateBy': self.updateBy,
+            'updateBy': str(self.updateBy),
         }

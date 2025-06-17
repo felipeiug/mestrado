@@ -75,7 +75,7 @@ class User(AuditoriaTable, Base):
             'lastLogin': self.lastLogin.isoformat() if self.lastLogin is not None else None,
             'updateDate': self.updateDate.isoformat() if self.updateDate is not None else None,
             'insertDate': self.insertDate.isoformat(),
-            'updateBy': self.updateBy,
+            'updateBy': str(self.updateBy),
         }
 
 

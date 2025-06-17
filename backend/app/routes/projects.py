@@ -144,6 +144,7 @@ async def delete_project(
         raise project_not_found_exception
 
     db.delete(project)
+    db.delete(project.flow)
     db.commit()
     
     return project.to_json(without_flow=True)
