@@ -19,7 +19,7 @@ class Project(AuditoriaTable, Base):
     description = Column(String, nullable=True)
     flow_id = Column(Integer, ForeignKey('flows.id', ondelete='CASCADE'), nullable=False)
 
-    flow = relationship("Flow")
+    flow = relationship("Flow", back_populates="project")
     
     def to_json(self, without_flow=False):
         data =  {
@@ -41,6 +41,7 @@ class Project(AuditoriaTable, Base):
 class Flow(AuditoriaTable, Base):
     __tablename__ = 'flows'
     id = Column(Integer, primary_key=True, unique=True, nullable=False)
+    style = Column(JSON, nullable=True)
 
     nodes = relationship("Node", back_populates="flow",
                          cascade="all, delete-orphan",
@@ -50,9 +51,14 @@ class Flow(AuditoriaTable, Base):
                          cascade="all, delete-orphan",
                          passive_deletes=True)
     
+    project = relationship("Project", back_populates="flow",
+                         cascade="all, delete-orphan",
+                         passive_deletes=True)
+    
     def to_json(self):
         return {
             "id": self.id,
+            "style": self.style,
             'nodes': [i.to_json() for i in self.nodes],
             'edges': [i.to_json() for i in self.edges],
             'updateDate': self.updateDate.isoformat() if self.updateDate is not None else None,
@@ -91,6 +97,7 @@ class Edge(AuditoriaTable, Base):
     id = Column(String, primary_key=True)
     source = Column(String, nullable=False)
     target = Column(String, nullable=False)
+    args = Column(JSON, nullable=True)
     flow_id = Column(Integer, ForeignKey('flows.id', ondelete='CASCADE'), nullable=False)
     
     flow = relationship("Flow", back_populates="edges")

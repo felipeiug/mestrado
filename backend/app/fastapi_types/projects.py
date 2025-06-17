@@ -6,8 +6,9 @@ class EdgeType(BaseModel):
     source: str
     target: str
     insertDate: str
-    updateDate: Optional[str]
-    updateBy: Optional[str]
+    args: Optional[Dict] = None
+    updateDate: Optional[str] = None
+    updateBy: Optional[str] = None
 
 class NodeType(BaseModel):
     id: str
@@ -16,16 +17,17 @@ class NodeType(BaseModel):
     posX: float
     posY: float
     insertDate: str
-    updateDate: Optional[str]
-    updateBy: Optional[str]
+    updateDate: Optional[str] = None
+    updateBy: Optional[str] = None
 
 class FlowType(BaseModel):
     id: int
+    style: Optional[dict] = None
     nodes: List[NodeType]
     edges: List[EdgeType]
     insertDate: str
-    updateDate: Optional[str]
-    updateBy: Optional[str]
+    updateDate: Optional[str] = None
+    updateBy: Optional[str] = None
 
 class ProjectType(BaseModel):
     id: int
@@ -34,6 +36,6 @@ class ProjectType(BaseModel):
     description: Optional[str] = None
     flow: Optional[FlowType] = None
     insertDate: str
-    updateDate: Optional[str]
-    updateBy: Optional[str]
+    updateDate: Optional[str] = None
+    updateBy: Optional[str] = None
 
