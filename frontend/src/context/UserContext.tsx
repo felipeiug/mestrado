@@ -55,7 +55,7 @@ export const UserProvider: React.FC<Props> = ({ children }) => {
         setError(user);
         return;
       }
-      toggleTheme(user.theme ?? false);
+      toggleTheme(user.theme ?? true);
       setUser(user);
     });
   }, []);
