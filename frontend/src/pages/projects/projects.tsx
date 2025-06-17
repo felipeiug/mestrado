@@ -314,6 +314,7 @@ const ProjectItem: React.FC<ProjectItemProps> = ({
           justifyContent: 'center',
           borderRadius: isMobile ? 0 : '12px',
           transition: 'transform 0.2s, box-shadow 0.2s',
+          position: "relative",
           mb: "0.5em",
           '&:hover': {
             transform: 'translateY(-4px)',

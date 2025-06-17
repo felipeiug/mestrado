@@ -19,7 +19,7 @@ interface ConfirmModalProps {
 export const ConfirmModal: React.FC<ConfirmModalProps> = ({ open, title, message, onCancel, onConfirm }) => {
 
     return (
-        <Dialog open={open} onClose={onCancel} fullWidth maxWidth="sm">
+        <Dialog open={open} onClose={onCancel} fullWidth maxWidth="xs">
             <DialogTitle>{title}</DialogTitle>
             {message &&
                 <DialogContent>
@@ -30,8 +30,8 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({ open, title, message
             }
 
             <DialogActions>
-                <Button onClick={onConfirm}>Confirm</Button>
                 <Button onClick={onCancel} variant="contained" color="primary">Cancel</Button>
+                <Button onClick={onConfirm}>Confirm</Button>
             </DialogActions>
         </Dialog>
     );
