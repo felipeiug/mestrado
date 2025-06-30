@@ -24,7 +24,7 @@ import { DeleteForever, Edit } from '@mui/icons-material';
 import { ConfirmModal } from '../../components';
 import { generateRandomHash } from '../../core';
 
-export const ProjectsPage: React.FC = () => {
+export const ProjectPage: React.FC = () => {
   const api = useApi();
   const theme = useTheme();
   const navigate = useNavigate();

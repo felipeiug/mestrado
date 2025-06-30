@@ -17,7 +17,7 @@ interface CreateModalProps {
 }
 
 export const NewProjectModal: React.FC<CreateModalProps> = ({ initialProject, open, onClose, onCreate }) => {
-  const [name, setName] = useState(initialProject?.name ?? "");
+  const [name, setName] = useState(initialProject?.name);
   const [description, setDescription] = useState<string | undefined>(initialProject?.description);
   const [nameError, setNameError] = useState(false);
 
@@ -33,7 +33,7 @@ export const NewProjectModal: React.FC<CreateModalProps> = ({ initialProject, op
   };
 
   const handleSubmit = () => {
-    if (!name.trim()) {
+    if (!name?.trim()) {
       setNameError(true);
       return;
     }
@@ -45,7 +45,7 @@ export const NewProjectModal: React.FC<CreateModalProps> = ({ initialProject, op
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{`${initialProject ? 'Create a' : 'Edit'} Project`}</DialogTitle>
+      <DialogTitle>{`${initialProject ? 'Edit' : 'Create a'} Project`}</DialogTitle>
       <DialogContent>
         <Box sx={{ mt: 2 }}>
           <TextField
@@ -56,7 +56,7 @@ export const NewProjectModal: React.FC<CreateModalProps> = ({ initialProject, op
             type="text"
             fullWidth
             variant="outlined"
-            value={name.length === 0 ? initialProject?.name : name}
+            value={name}
             onChange={handleNameChange}
             error={nameError}
             helperText={nameError ? 'Name is required' : ''}
@@ -72,7 +72,7 @@ export const NewProjectModal: React.FC<CreateModalProps> = ({ initialProject, op
             variant="outlined"
             multiline
             rows={4}
-            value={(description ?? []).length === 0 ? initialProject?.description : description}
+            value={description ?? undefined}
             onChange={handleDescriptionChange}
           />
         </Box>
@@ -80,7 +80,7 @@ export const NewProjectModal: React.FC<CreateModalProps> = ({ initialProject, op
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
         <Button onClick={handleSubmit} variant="contained" color="primary">
-          {initialProject? "Update": "Create"}
+          {initialProject ? "Update" : "Create"}
         </Button>
       </DialogActions>
     </Dialog>

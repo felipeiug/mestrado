@@ -2,7 +2,7 @@ import React from 'react';
 import { Routes, Route, BrowserRouter, Navigate } from 'react-router-dom';
 import { ExamplesPage, FlowPage, ForgotPassword, HomePage, Login, Register, ResetPassword, UserData } from '../pages';
 import { LayersProvider } from '../context/LayersContext';
-import { ProjectsPage } from '../pages/projects';
+import { ProjectPage, ProjectsPage } from '../pages/projects';
 import { UserProvider } from '../context';
 
 export const AppRoutes: React.FC = () => {
@@ -31,7 +31,7 @@ function LoggedApp() {
           <Route path="/user" element={<UserData />} />
           <Route path="/flow" element={<FlowPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
-          <Route path="/project/:id" element={<></>} />
+          <Route path="/project/:id" element={<ProjectPage />} />
         </Routes>
       </LayersProvider>
     </UserProvider>

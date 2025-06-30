@@ -211,3 +211,180 @@ export const ParticleGraph: React.FC<ParticleGraphProps> = ({
     </svg>
   );
 };
+
+interface Node {
+  id: string;
+  x: number;
+  y: number;
+  color: string;
+}
+interface Layer {
+  nodes: Node[];
+}
+
+interface ANNProps extends React.SVGProps<SVGSVGElement> {
+  width?: number;
+  height?: number;
+  initLayers?: Layer[];
+  seed?: number | string;
+  baseColor?: string; // Nova prop para a cor base
+  minLayers?: number;
+  maxLayers?: number;
+  minLayerSize?: number;
+  maxLayerSize?: number;
+}
+
+export const ANN: React.FC<ANNProps> = ({
+  seed = Date.now(),
+  minLayers = 3,
+  maxLayers = 7,
+  minLayerSize = 3,
+  maxLayerSize = 10,
+  initLayers,
+  ...svgProps
+}) => {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [layers, setLayers] = useState<Layer[] | undefined>(initLayers);
+
+  const random = useMemo(() => {
+    if (typeof seed === 'number') return new SeededRandom(seed + 1);
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      const char = seed.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash |= 0; // Converte para 32-bit integer
+    }
+    return new SeededRandom(hash + 1);
+  }, [seed]);
+
+  // Base color
+  const baseColor = useMemo(() => generateRandomColor(true, random), [random]);
+
+  // Gerar cores baseadas na cor principal
+  const colorPalette = useMemo(() =>
+    layers ? generateColorVariations(baseColor, layers.length, random) : [],
+    [layers]
+  );
+
+  // Efeito para observar mudanças no tamanho do container
+  useEffect(() => {
+    const updateDimensions = () => {
+      if (svgRef.current) {
+        const { width, height } = svgRef.current.getBoundingClientRect();
+        setDimensions({ width, height });
+      }
+    };
+
+    updateDimensions();
+
+    const resizeObserver = new ResizeObserver(updateDimensions);
+    if (svgRef.current) {
+      resizeObserver.observe(svgRef.current);
+    }
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  // Gerar layers
+  useEffect(() => {
+    const n_layers = Math.floor(random.next() * (maxLayers - minLayers)) + minLayers;
+    const dx = (dimensions.width * 0.8) / (n_layers - 1);
+
+    const newLayers = Array.from({ length: n_layers }).map((_, idLayer) => {
+      const n_nodes = Math.floor(random.next() * (idLayer === 0 ? minLayerSize : (maxLayerSize - minLayerSize))) + minLayerSize;
+      const dy = (dimensions.height * 0.8) / (n_nodes - 1);
+
+      const x = ((dimensions.width * 0.2) / 2) + dx * idLayer;
+
+      const nodes = Array.from({ length: n_nodes }).map((_, idNode) => {
+        const y = ((dimensions.height * 0.2) / 2) + dy * idNode;
+        return {
+          id: `${idLayer}-${idNode}`,
+          x: x,
+          y: y,
+          color: layers?.[idLayer]?.nodes?.[idNode]?.color ?? colorPalette[idLayer],
+        };
+      });
+
+      return { nodes: nodes };
+    });
+
+    setLayers(newLayers);
+  }, [random, dimensions, minLayers, maxLayers, minLayerSize, maxLayerSize]);
+
+  // Gerar conexões aleatórias entre partículas
+  const connections = useMemo(() => {
+    const result: { x1: number; y1: number; x2: number; y2: number; width: number }[] = [];
+
+    for (let i = 0; i < (layers?.length ?? 0); i++) {
+      const layer = layers?.[i];
+      const nextLayer = layers?.[i + 1];
+
+      if (!layer || !nextLayer) break;
+
+      for (let j = 0; j < layer.nodes.length; j++) {
+        const node = layer.nodes[j];
+        const p1 = {
+          x: node.x,
+          y: node.y
+        };
+
+        for (let k = 0; k < nextLayer.nodes.length; k++) {
+          const node = nextLayer.nodes[k];
+          const p2 = {
+            x: node.x,
+            y: node.y,
+          };
+
+          result.push({
+            x1: p1.x,
+            y1: p1.y,
+            x2: p2.x,
+            y2: p2.y,
+            width: 1,
+          });
+
+        }
+      }
+    }
+
+    return result;
+  }, [layers]);
+
+  return (
+    <svg
+      ref={svgRef}
+      width={dimensions.width}
+      height={dimensions.height}
+      viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
+      {...svgProps}
+    >
+      {/* Desenhar conexões primeiro (para ficarem atrás das partículas) */}
+      {connections.map((conn, index) => (
+        <line
+          key={`conn-${index}`}
+          x1={conn.x1}
+          y1={conn.y1}
+          x2={conn.x2}
+          y2={conn.y2}
+          stroke={"#000"}
+          strokeWidth={conn.width}
+          strokeOpacity={0.3}
+        />
+      ))}
+
+      {/* Desenhar partículas */}
+      {layers?.flatMap((layer, idx) => layer.nodes.map((node) => (
+        <circle
+          key={node.id}
+          r={5}
+          cx={node.x}
+          cy={node.y}
+          fill={node.color ?? colorPalette?.[idx] ?? "#fa0"}
+        />
+      ))
+      )}
+    </svg>
+  );
+};
