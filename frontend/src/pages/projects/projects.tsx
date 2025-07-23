@@ -14,7 +14,6 @@ import {
   Container,
   IconButton
 } from '@mui/material';
-import Logo from "../../assets/logo.jpg";
 import { ParticleGraph } from '../../components';
 import { useNavigate } from 'react-router-dom';
 import { Project, useError, useLoading, useUser } from '../../context';
@@ -23,6 +22,7 @@ import { NewProjectModal } from '../../components/projects';
 import { DeleteForever, Edit } from '@mui/icons-material';
 import { ConfirmModal } from '../../components';
 import { generateRandomHash } from '../../core';
+import Logo from "../../assets/logo.jpg";
 
 export const ProjectsPage: React.FC = () => {
   const api = useApi();

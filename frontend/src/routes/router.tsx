@@ -1,6 +1,6 @@
 import React from 'react';
 import { Routes, Route, BrowserRouter, Navigate } from 'react-router-dom';
-import { ExamplesPage, FlowPage, ForgotPassword, HomePage, Login, Register, ResetPassword, UserData } from '../pages';
+import { ExamplesPage, ForgotPassword, HomePage, Login, Register, ResetPassword, UserData } from '../pages';
 import { LayersProvider } from '../context/LayersContext';
 import { ProjectPage, ProjectsPage } from '../pages/projects';
 import { UserProvider } from '../context';
@@ -29,7 +29,6 @@ function LoggedApp() {
         <Routes>
           <Route path="/*" element={<Navigate to="/app/projects" />} />
           <Route path="/user" element={<UserData />} />
-          <Route path="/flow" element={<FlowPage />} />
           <Route path="/projects" element={<ProjectsPage />} />
           <Route path="/project/:id" element={<ProjectPage />} />
         </Routes>

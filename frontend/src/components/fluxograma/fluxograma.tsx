@@ -9,38 +9,43 @@ import {
   Node,
   Edge,
   useReactFlow,
+  EdgeMouseHandler,
+  useEdgesState,
+  useNodesState,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { LinearLayer } from './linear';
-import { generateRandomHash, LayerBase, LayerType, LayerTypeName } from '../../core';
-import { Menu, MenuItem, Typography } from '@mui/material';
+import { generateRandomHash, LayerBase, LayerTypeName } from '../../core';
+import { Box, Menu, MenuItem, Typography } from '@mui/material';
 import { ContentCopy, Delete, Help, Settings } from '@mui/icons-material';
-import { useAppThemeContext } from '../../context';
+import { FlowType, useAppThemeContext } from '../../context';
 
 const nodeTypes: any = {
   linearLayer: LinearLayer
 };
 
 export type FluxogramaProps = {
+  initialFlow?: FlowType;
   onProperties?: (value: LayerBase) => void;
   onHelp?: (layer: LayerTypeName) => void;
 }
 
-export const Fluxograma: React.FC<FluxogramaProps> = ({ onHelp, onProperties }) => {
+export const Fluxograma: React.FC<FluxogramaProps> = ({ initialFlow, onHelp, onProperties }) => {
   const { themeType } = useAppThemeContext();
   const { setCenter, addNodes } = useReactFlow();
 
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
     mouseY: number;
-    node: Node<LayerType>;
+    node: Node<LayerBase>;
   } | null>(null);
-  const [edges, setEdges] = useState<Edge[]>([]);
-  const [nodes, setNodes] = useState<Node<LayerType>[]>([
+  const [edges, setEdges] = useEdgesState<Edge>([]);
+  const [nodes, setNodes] = useNodesState<Node<LayerBase>>([
     {
       id: generateRandomHash(8),
       data: {
         name: "Linear",
+        category: "",
         inShape: [8],
         outShape: [64],
         validateInShape: (shape) => shape.length === 1,
@@ -53,6 +58,7 @@ export const Fluxograma: React.FC<FluxogramaProps> = ({ onHelp, onProperties }) 
       id: generateRandomHash(8),
       data: {
         name: "Linear",
+        category: "",
         inShape: [32],
         outShape: [128],
         validateInShape: (shape) => shape.length === 1,
@@ -65,6 +71,7 @@ export const Fluxograma: React.FC<FluxogramaProps> = ({ onHelp, onProperties }) 
       id: generateRandomHash(8),
       data: {
         name: "Linear",
+        category: "",
         inShape: [64],
         outShape: [128],
         validateInShape: (shape) => shape.length === 1,
@@ -81,7 +88,15 @@ export const Fluxograma: React.FC<FluxogramaProps> = ({ onHelp, onProperties }) 
   };
 
   const handleRemove = () => {
+    if (!contextMenu?.node) return;
+
     setContextMenu(null);
+    setNodes((nds) => nds.filter((node) => node.id !== contextMenu.node.id));
+    setEdges((eds) => eds.filter((edge) => !edge.source.startsWith(contextMenu.node.id) && !edge.target.startsWith(contextMenu.node.id)));
+  };
+
+  const handleRemoveEdge: EdgeMouseHandler<Edge> = (ev, ed) => {
+    setEdges(edges => edges.filter(edge => edge.id !== ed.id));
   };
 
   const handleDuplicate = () => {
@@ -113,14 +128,14 @@ export const Fluxograma: React.FC<FluxogramaProps> = ({ onHelp, onProperties }) 
 
 
 
-  const onNodeClick = (_: React.MouseEvent, node: Node<LayerType>) => {
+  const onNodeClick = (_: React.MouseEvent, node: Node<LayerBase>) => {
     if (onProperties) onProperties(node.data);
 
     setTimeout(() => {
       setCenter(node.position.x, node.position.y);
     }, 100);
   }
-  const onNodeContextMenu = (event: React.MouseEvent, node: Node<LayerType>) => {
+  const onNodeContextMenu = (event: React.MouseEvent, node: Node<LayerBase>) => {
     event.preventDefault();
     setContextMenu({
       mouseX: event.clientX,
@@ -147,6 +162,7 @@ export const Fluxograma: React.FC<FluxogramaProps> = ({ onHelp, onProperties }) 
 
   return (<>
 
+    {/* Context Menu */}
     <Menu
       open={contextMenu !== null}
       onClose={handleClose}
@@ -176,28 +192,42 @@ export const Fluxograma: React.FC<FluxogramaProps> = ({ onHelp, onProperties }) 
 
     </Menu>
 
-    <div style={{ height: '100%', width: "100%" }}>
-      <ReactFlow<Node<LayerType>>
-        fitView
-        colorMode={themeType ? "light" : "dark"}
+    {(edges.length === 0 && nodes.length === 0) ?
+      (<Box textAlign="center">
+        <Typography variant="h6" fontWeight="bold" gutterBottom>
+          Drag and drop nodes to design your network
+        </Typography>
+        <Typography color="text.secondary">
+          Start by adding input, hidden, and output layers. Connect them to define the data flow.
+        </Typography>
+      </Box>) : (
+        <div style={{ height: '100%', width: "100%" }}>
+          <ReactFlow<Node<LayerBase>>
+            fitView
+            colorMode={themeType ? "light" : "dark"}
+            deleteKeyCode={['Delete']}
 
-        nodes={nodes}
-        edges={edges}
+            nodes={nodes}
+            edges={edges}
 
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
 
-        onConnect={onConnect}
+            onConnect={onConnect}
 
-        nodeTypes={nodeTypes}
+            nodeTypes={nodeTypes}
 
-        onNodeClick={onNodeClick}
-        onNodeContextMenu={onNodeContextMenu}
-      >
-        <Background />
-        <Controls />
-      </ReactFlow>
-    </div>
+            onNodeClick={onNodeClick}
+            onNodeContextMenu={onNodeContextMenu}
+            onEdgeDoubleClick={handleRemoveEdge}
+          >
+            <Background />
+            <Controls />
+          </ReactFlow>
+        </div>
+      )
+    }
+
 
   </>);
 }

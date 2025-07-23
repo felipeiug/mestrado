@@ -2,6 +2,7 @@ export type LayerTypeName = 'MoE' | 'Linear' | 'Conv1d' | 'Conv2d' | 'LSTM' | 'D
 
 export type LayerBase = {
   name: LayerTypeName;
+  category: string;
   desc?: string;
   inShape: number[];
   outShape: number[];

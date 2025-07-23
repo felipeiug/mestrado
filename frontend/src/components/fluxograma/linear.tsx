@@ -1,64 +1,208 @@
-import { AddCircle, Timeline } from '@mui/icons-material';
-import { Tooltip } from '@mui/material';
-import { Connection, Node, useEdges, useNodes } from '@xyflow/react';
-import { EdgeBase } from '@xyflow/system';
+import { Add, AddCircle, Remove, Timeline } from '@mui/icons-material';
+import { Box, IconButton, Paper, TextField, Tooltip, Typography, useTheme } from '@mui/material';
+import { Connection, Handle, Node, useEdges, useNodes } from '@xyflow/react';
+import { EdgeBase, Position } from '@xyflow/system';
 import { LayerType, Linear } from '../../core';
-import { useState } from 'react';
-import { BaseNode } from './baseNode';
+import { useEffect, useState } from 'react';
 
 
 export function LinearLayer(nodeData: Node<Linear>) {
+  const theme = useTheme();
   const color = "rgb(175, 214, 46)";
 
   const nodes = useNodes<Node<LayerType>>();
   const edges = useEdges();
 
-  const [state, setState] = useState(false);
+  const [shape, setShape] = useState([nodeData.data.inShape, nodeData.data.outShape]);
+  const [bias, setBias] = useState(nodeData.data.bias ?? true);
+
+  useEffect(() => {
+    setShape([nodeData.data.inShape, nodeData.data.outShape]);
+  }, [edges]);
+
+  // Atualizando as conexões
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log("AAAAA");
+
+      const eds = edges.filter(ed => ed.id.startsWith(nodeData.id));
+
+      
+
+      // if(eds.length > 0){
+      //   setEdges
+      // }
+
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [shape]);
 
   const validateConnection = (edge: EdgeBase | Connection) => {
     if (edge.source === edge.target) return false;
 
     const nodeSource = nodes.filter(value => value.id === edge.source)[0];
     const nodeTarget = nodes.filter(value => value.id === edge.target)[0];
-    const valid = nodeTarget.data.validateInShape(nodeSource.data.outShape);
+    const valid = nodeSource.data.validateInShape(nodeTarget.data.outShape);
 
     for (const ed of edges) {
-      if (ed.target === nodeTarget.id) return false;
+      if (ed.source === nodeSource.id) return false;
     }
 
-    if (valid) nodeTarget.data.inShape = nodeSource.data.outShape;
+    if (valid) nodeSource.data.inShape = nodeTarget.data.outShape;
 
     return valid;
   };
 
-  const handleConnect = () => {
-    setState(!state);
-  }
+  const handleChangeBias = () => {
+    nodeData.data.bias = !bias;
+    setBias(!bias);
+  };
 
-  return <BaseNode
-    title='Linear'
-    color={color}
+  const handleChangeOutput = (output: number) => {
+    nodeData.data.outShape = [output];
+    setShape([nodeData.data.inShape, [output]]);
+  };
 
-    inShape={nodeData.data.inShape}
-    outShape={nodeData.data.outShape}
+  return <>
+    <Handle
+      key={nodeData.id + "_T1"}
+      type="target"
+      position={Position.Right}
+      isValidConnection={validateConnection}
+      style={{
+        width: 8,
+        height: 8,
+        right: -(8 / 2),
+        top: 46 / 2,
+        backgroundColor: theme.palette.primary.dark
+      }}
+    />
+    <Handle
+      key={nodeData.id + "_S1"}
+      type="source"
+      position={Position.Left}
+      isValidConnection={validateConnection}
+      style={{
+        width: 8,
+        height: 8,
+        left: -(8 / 2),
+        top: 46 / 2,
+        backgroundColor: theme.palette.primary.dark
+      }}
+    />
 
-    onConnection={handleConnect}
-    validateConnection={validateConnection}
-  >
-    <Timeline sx={{ fontSize: 22, color: color }} />
-    <div style={{
-      paddingRight: "2px",
-      paddingBottom: "2px",
-      flex: 1,
-      display: "flex",
-      flexDirection: "row",
-      width: "100%",
-      justifyContent: "end",
-      alignItems: "end"
-    }}>
-      <Tooltip title="Bias">
-        <AddCircle sx={{ fontSize: 9 }} color={(nodeData.data.bias ?? true) ? 'success' : 'error'} />
-      </Tooltip>
-    </div>
-  </BaseNode>;
+
+
+    {/* Conteúdo */}
+    <Box
+      sx={{
+        gap: "1px",
+        width: 46,
+        display: 'flex',
+        cursor: "pointer",
+        flexDirection: "column",
+        justifyContent: "space-between",
+      }}
+    >
+      <Paper
+        elevation={3}
+        sx={{
+          p: 0,
+          width: 46,
+          height: 46,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          borderLeft: color ? `4px solid ${color}` : undefined,
+          '&:hover': { boxShadow: theme.shadows[6] },
+        }}
+      >
+        <div style={{ flex: 1, width: "5px", height: "15.5px" }} />
+
+
+        <Timeline sx={{ fontSize: 22, color: color }} />
+        <div style={{
+          paddingRight: "2px",
+          paddingBottom: "2px",
+          flex: 1,
+          display: "flex",
+          flexDirection: "row",
+          width: "100%",
+          justifyContent: "end",
+          alignItems: "end"
+        }}>
+          <Tooltip title={(bias ? "" : "Not ") + "Using Bias"}>
+            <AddCircle onClick={handleChangeBias} sx={{ fontSize: 9 }} color={bias ? 'success' : 'error'} />
+          </Tooltip>
+        </div>
+
+      </Paper >
+
+      <Box sx={{
+        width: "46px",
+        display: 'flex',
+        flexDirection: "column",
+      }}>
+        <Typography fontSize={8} fontWeight={"bold"} textAlign={"center"}>
+          Linear
+        </Typography>
+
+        <Tooltip
+          title={
+            <Box display="flex" alignItems="center" gap={0.5} p={0.5}>
+              <IconButton size="small" onClick={() => handleChangeOutput(Math.max(1, shape[1][0] - 1))}>
+                <Remove fontSize="inherit" />
+              </IconButton>
+
+              <TextField
+                type="number"
+                value={shape[1]}
+                onChange={(e) => {
+                  const value = Math.max(1, Number(e.target.value));
+                  handleChangeOutput(value);
+                }}
+                inputProps={{
+                  min: 1,
+                  style: {
+                    textAlign: 'center',
+                    fontSize: 12,
+                    width: 56,
+                    padding: 0,
+                  },
+                }}
+                variant="standard"
+              />
+
+              <IconButton size="small" onClick={() => handleChangeOutput(shape[1][0] + 1)}>
+                <Add fontSize="inherit" />
+              </IconButton>
+            </Box>
+          }
+          arrow
+          placement="top"
+        >
+          <Typography
+            fontSize={6}
+            fontWeight="bold"
+            textAlign="center"
+            sx={{
+              cursor: "pointer",
+              userSelect: "none",
+              px: 0.5,
+              py: 0.2,
+              borderRadius: "4px",
+              "&:hover": {
+                backgroundColor: theme => theme.palette.action.hover,
+              },
+            }}
+          >
+            [{shape[0]}, {shape[1]}]
+          </Typography>
+        </Tooltip>
+
+      </Box>
+    </Box >
+  </>;
 };

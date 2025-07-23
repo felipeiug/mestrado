@@ -1,30 +1,64 @@
-import React, { useEffect, useState } from 'react';
 import {
-  Box,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+  BarChart,
+  Bar
+} from 'recharts';
+import {
+  Toolbar,
   Typography,
-  Button,
   Grid,
-  Card,
+  Box,
+  Button,
+  Paper,
+  TextField,
+  Select,
+  MenuItem,
   useTheme,
   useMediaQuery,
-  Toolbar,
-  CardMedia,
+  IconButton,
   Divider,
-  CardActionArea,
-  Container,
-  IconButton
+  Tooltip,
+  Dialog,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
-import Logo from "../../assets/logo.jpg";
-import { ParticleGraph } from '../../components';
-import { useNavigate } from 'react-router-dom';
-import { Project, useError, useLoading, useUser } from '../../context';
+import {
+  ArrowBack,
+  PlayArrow,
+  Stop,
+  Fullscreen,
+  Close,
+  ArrowRightAlt
+} from '@mui/icons-material';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useApi } from '../../services';
-import { NewProjectModal } from '../../components/projects';
-import { DeleteForever, Edit } from '@mui/icons-material';
-import { ConfirmModal } from '../../components';
-import { generateRandomHash } from '../../core';
+import { Project, useError, useLoading, useUser } from '../../context';
+import { useEffect, useState } from 'react';
+import { LossFunctions, Optimizers } from '../../core';
+import { FilesSelector, Fluxograma, LayerHelp, LayerList } from '../../components';
+import { ReactFlowProvider } from '@xyflow/react';
+
+
+export interface EpochData {
+  epoch: number;
+  loss: number;
+  acc: number;
+}
+
+interface UpdateConfig {
+  epochs: number;
+  learningRate: number;
+  optimizer: Optimizers;
+  lossFunction: LossFunctions;
+}
 
 export const ProjectPage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+
   const api = useApi();
   const theme = useTheme();
   const navigate = useNavigate();
@@ -33,341 +67,412 @@ export const ProjectPage: React.FC = () => {
   const setLoading = useLoading();
   const setError = useError();
 
-  const [openNew, setOpenNew] = useState<boolean>(false);
-  const [editProject, setEditProject] = useState<{ id: number; name: string; description?: string; }>();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [projectModalKey, setProjectModalKey] = useState(generateRandomHash(8));
-  const [projectToRemove, setProjectToRemove] = useState<number>();
 
+  const [helpText, setHelpText] = useState<string>();
+  const [projeto, setProjeto] = useState<Project>();
+  const [showLayersType, setShowLayersType] = useState(true);
+
+  // Controles
+  const [totalEpochs, setTotalEpochs] = useState(100);
+  const [optimizer, setOptimizer] = useState<Optimizers>("adam");
+  const [learningRate, setLearningRate] = useState(0.001);
+  const [updateConfig, setUpdateConfig] = useState<UpdateConfig>({
+    epochs: 100,
+    learningRate: 0.001,
+    optimizer: "adam",
+    lossFunction: "MSE",
+  });
+
+  // Métricas
+
+  const [epochs, setEpochs] = useState<EpochData[]>([
+    { epoch: 0, loss: 1E10, acc: 0 },
+    { epoch: 1, loss: 1E2, acc: 0.001 },
+    { epoch: 2, loss: 14.34567, acc: 0.01 },
+    { epoch: 3, loss: 1.1276971, acc: 0.023456 },
+  ]);
+
+
+  // Obter dados do estudo
   useEffect(() => {
     setLoading({ open: true });
-    if (!user) return;
-
-    api.projects.getAllProjects().then(value => {
-      if ("error" in value) {
-        setError(value);
-        setLoading({ open: false });
-        return;
-      }
-      setProjects(value);
+    if (!user) {
       setLoading({ open: false });
-    });
-  }, [user]);
-
-  const handleNewEditProject = (name: string, description?: string, id?: number) => {
-    setLoading({ open: true });
-
-    if (!id) {
-      api.projects.addProject({
-        id: -1,
-        user: "",
-        name: name,
-        description: description,
-        insertDate: new Date(),
-      }).then(value => {
-        if ("error" in value) {
-          setError(value);
-          setLoading({ open: false });
-          return;
-        }
-
-        projects.push(value);
-        setProjects([...projects]);
-        setLoading({ open: false });
-      });
-    } else {
-      api.projects.updateProject({
-        id: id,
-        user: "",
-        name: name,
-        description: description,
-        insertDate: new Date(),
-      }).then(value => {
-        if ("error" in value) {
-          setError(value);
-          setLoading({ open: false });
-          return;
-        }
-
-        setProjects(projects.map(proj => {
-          if (proj.id === id) return value;
-          return proj;
-        }));
-        setLoading({ open: false });
-      });
+      return;
     }
 
-    setProjectToRemove(undefined);
-    setOpenNew(false);
-  };
-
-  const handleRemoveProject = () => {
-    if (!projectToRemove) return;
-
-    setProjectToRemove(undefined);
-
-    setLoading({ open: true });
-    api.projects.deleteProject(projectToRemove).then(value => {
+    api.projects.getProject(Number(id)).then(value => {
       if ("error" in value) {
         setError(value);
         setLoading({ open: false });
         return;
       }
-
-      setProjects(projects.filter(proj => proj.id !== projectToRemove));
+      setProjeto(value);
       setLoading({ open: false });
-    })
-  };
+    });
+  }, [id, user]);
 
-  if (!user) return <></>;
+  const handleStartTrain = () => { };
+  const handlePauseTrain = () => { };
+  const handleStopTrain = () => { };
+
+  const handleOpenFullScreenFlow = () => { };
+  const handleSetConfig = () => { };
+
+  ////////////////////// Cálculos de cada iteração
+
+  // Evolução do Loss e Acc
+  let evoLoss: number | undefined = undefined;
+  let evoAcc: number | undefined = undefined;
+  if (epochs.length > 1) {
+    const idx = epochs.length - 1;
+    evoLoss = epochs[idx - 1].loss - epochs[idx].loss;
+    evoAcc = epochs[idx].acc - epochs[idx - 1].acc;
+  }
 
   return (
     <>
-      {/* Modal do novo projeto */}
-      <NewProjectModal
-        key={projectModalKey}
-        open={openNew || Boolean(editProject)}
-        initialProject={editProject}
-        onClose={() => {
-          setOpenNew(false);
-          setEditProject(undefined);
-        }}
-        onCreate={handleNewEditProject}
-      />
+      <Dialog maxWidth={'lg'} open={Boolean(helpText)} onClose={() => setHelpText(undefined)}>
+        <DialogContent>
+          <LayerHelp startText={helpText ?? ""} />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setHelpText(undefined)}>Fechar</Button>
+        </DialogActions>
+      </Dialog>
 
-      {/* Confirmação */}
-      <ConfirmModal
-        open={Boolean(projectToRemove)}
-        onCancel={() => setProjectToRemove(undefined)}
-        onConfirm={handleRemoveProject}
-        title='Remove Project?'
-        message='This action is irreversible!'
-      />
-
-      {/* Tela */}
-      <Box
-        sx={{
-          height: '100vh',
-          fontFamily: '"Plus Jakarta Sans", "Noto Sans", sans-serif',
-          overflowX: 'hidden',
-          display: "flex",
-          flexDirection: "column",
-          pb: "1em",
-        }}
-      >
+      {/* Page */}
+      <Box sx={{
+        width: '100vw',
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
         {/* Header */}
         <Toolbar>
-          <Box sx={{ width: 32, height: 32 }}>
-            <CardMedia
-              onClick={() => navigate("/app/user")}
-              component="img"
-              image={Logo}
-              alt="Imagem"
-              sx={{
-                width: '100%',
-                height: '100%',
-                cursor: "pointer",
-                objectFit: 'cover',
-                objectPosition: 'center center',
-                borderRadius: "50%"
-              }}
-            />
-          </Box>
+          <IconButton onClick={() => navigate("/app/projects")}>
+            <ArrowBack />
+          </IconButton>
+
           <div style={{ width: "1em" }} />
-          <Typography fontWeight={"bold"} color='textPrimary'>
-            {user.name}
+          <Typography fontWeight={"bold"} color='textPrimary' fontSize='1.5rem'>
+            {!projeto ? "Nome do Projeto" : projeto.name}
           </Typography>
 
-          <Box sx={{ display: 'flex', flex: 1, justifyContent: 'flex-end', gap: 4 }}>
-            <Button
-              onClick={() => {
-                setOpenNew(true);
-                setProjectModalKey(generateRandomHash(8))
-              }}
-              variant="contained"
-              sx={{
-                minWidth: 84,
-                maxWidth: 480,
-                borderRadius: '12px',
-                height: 40,
-                px: 3,
-                fontSize: 14,
-                fontWeight: 'bold',
-                textTransform: 'none',
-              }}
-            >
-              New Project
-            </Button>
+
+          <Box sx={{ display: 'flex', flex: 1, justifyContent: 'flex-end', alignItems: "center", gap: 1 }}>
+            <Tooltip title="Start Train">
+              <IconButton onClick={handleStartTrain}>
+                <PlayArrow />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Stop Train">
+              <IconButton onClick={handleStopTrain}>
+                <Stop />
+              </IconButton>
+            </Tooltip>
+
+            <Typography>
+              00:00
+            </Typography>
+          </Box>
+        </Toolbar>
+        <Divider />
+
+        {/* Página */}
+        <Box flex={1} p={1} display="flex" flexDirection="column" gap={2} overflow='auto'>
+
+          {/* Título e métricas */}
+          <Box px={1} display="flex" flexDirection="row">
+            <Typography color='secondary' variant="h5" fontWeight="bold">Neural Network Design</Typography>
+            <div style={{ flex: 1 }} />
+
+            {/* Descrição atual */}
+            <Box sx={{
+              display: "flex",
+              flexDirection: "row",
+            }}>
+              <Typography color="warning">Epoch {(epochs.length + 1).toFixed(0)}</Typography>
+              <div style={{ width: "15px" }} />
+              <Typography color='success'>Loss</Typography>
+              <div style={{ width: "5px" }} />
+              <Typography fontWeight="bold">{(epochs.length > 0 ? epochs[epochs.length - 1].loss : 0).toFixed(5)}</Typography>
+              <div style={{ width: "15px" }} />
+              <Typography color='success'>Accuracy:</Typography>
+              <div style={{ width: "5px" }} />
+              <Typography fontWeight="bold">{((epochs.length > 0 ? epochs[epochs.length - 1].acc : 0) * 100).toFixed(2) + "%"}</Typography>
+            </Box>
+
           </Box>
 
-        </Toolbar>
+          {/* Items e Fluxograma */}
+          <Paper elevation={3} sx={{ m: "15px", p: "15px", display: 'flex', flexDirection: 'row', height: "calc(70vh + 60px)" }}>
 
-        {/* Main Content */}
-        <Box sx={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: "1em", height: "100%" }}>
-          <Container maxWidth="lg" sx={{ py: 2, gap: "1em", display: "flex", flexDirection: "column" }}>
+            {/* Tipos de Layers */}
+            {showLayersType && <Box p={2} display='flex' flexDirection='column' width="18vw" height="70vh">
+              <Typography variant="h6" fontWeight="bold" mb={1}>
+                Layers
+              </Typography>
+              <LayerList onHelpText={setHelpText} />
+            </Box>}
 
-            {/* Title */}
-            <Typography
-              color='textPrimary'
-              variant="h2"
-              sx={{
-                fontSize: isMobile ? '2rem' : '2.5rem',
-                fontWeight: 'black',
-                lineHeight: 1.2,
-                letterSpacing: '-0.033em',
-                maxWidth: 720
-              }}
-            >
-              Projects
-            </Typography>
+            {/* Fluxograma */}
+            <Paper sx={{
+              p: 0,
+              gap: 3,
+              flex: 1,
+              height: "70vh",
+              display: 'flex',
+              position: "relative",
+              alignItems: 'center',
+              justifyContent: "center",
+              flexDirection: 'column',
+              border: `2px dashed ${theme.palette.primary.main}`,
+            }}>
+              {/* Ações do Fluxograma */}
+              <Box position='absolute' top="0" left="0">
+                <Tooltip title={showLayersType ? "Close Layers" : "Open Layers"}>
+                  <IconButton onClick={() => setShowLayersType(!showLayersType)}>
+                    {showLayersType ? <Close /> : <ArrowRightAlt />}
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Open Fullscreen Flow">
+                  <IconButton onClick={handleOpenFullScreenFlow}>
+                    <Fullscreen />
+                  </IconButton>
+                </Tooltip>
+              </Box>
 
-            {/* Projetos */}
-            {projects.length === 0 &&
-              <Box sx={{ height: '65vh' }}>
-                <Typography
-                  color='textPrimary'
+              <ReactFlowProvider>
+                <Fluxograma initialFlow={projeto?.flow} />
+              </ReactFlowProvider>
+            </Paper>
+
+            {/* Arquivos Disponíveis */}
+            <Box p={2} display='flex' flexDirection='column' width="18vw" height="70vh">
+              <Typography variant="h6" fontWeight="bold" mb={1}>
+                Files
+              </Typography>
+              <FilesSelector />
+            </Box>
+
+          </Paper>
+
+          <Divider />
+
+          {/* Parameters */}
+          <Box display="flex" flexDirection="column" px={3}>
+
+            <Typography variant="h5" fontWeight="bold" color='textPrimary' py={2}>Parameters</Typography>
+
+            <Grid container spacing={3} pb={3}>
+
+              {/* Epochs */}
+              <Grid size={{ xs: 12, sm: 12 / 2, md: 12 / 4 }}>
+                <TextField
+                  fullWidth
+                  label='Epochs'
+                  placeholder={`Enter number`}
+                  type='number'
+                  value={updateConfig.epochs}
+                  onChange={(ev) => setUpdateConfig(last => ({ ...last, epochs: parseInt(ev.target.value.split(".")[0]) }))}
                   sx={{
-                    fontSize: isMobile ? '1rem' : '1.5rem',
-                    fontWeight: 'black',
-                    lineHeight: 1.2,
-                    letterSpacing: '-0.033em',
-                    maxWidth: 720
+                    '& .MuiOutlinedInput-root': {
+                      color: 'white',
+                      bgcolor: '#1a2632',
+                      borderColor: '#344d65',
+                      height: 56
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: 'secondary'
+                    }
+                  }}
+                />
+              </Grid>
+
+              {/* Learning Rate */}
+              <Grid size={{ xs: 12, sm: 12 / 2, md: 12 / 4 }}>
+                <TextField
+                  fullWidth
+                  label='Learning Rate'
+                  placeholder={`Enter rate`}
+                  type='number'
+                  value={updateConfig.learningRate}
+                  onChange={(ev) => setUpdateConfig(last => ({ ...last, learningRate: Number(ev.target.value) }))}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      color: 'white',
+                      bgcolor: '#1a2632',
+                      borderColor: '#344d65',
+                      height: 56
+                    },
+                    '& .MuiInputLabel-root': {
+                      color: 'secondary'
+                    }
+                  }}
+                />
+              </Grid>
+
+              {/* Optimizer */}
+              <Grid size={{ xs: 12, sm: 12 / 2, md: 12 / 4 }}>
+                <Select
+                  fullWidth
+                  label='Optimizer'
+                  value={updateConfig.optimizer}
+                  onChange={(ev) => setUpdateConfig(last => ({ ...last, optimizer: ev.target.value as Optimizers }))}
+                  sx={{
+                    color: 'white',
+                    bgcolor: '#1a2632',
+                    borderColor: '#344d65',
+                    height: 56,
+                    '& .MuiSelect-icon': {
+                      color: 'secondary'
+                    }
                   }}
                 >
-                  You do not have any projects yet, create one by clicking on 'New Project'.
-                </Typography>
-              </Box>
-            }
+                  <MenuItem value="adam">Adam</MenuItem>
+                  <MenuItem value="adamw">AdamW</MenuItem>
+                </Select>
+              </Grid>
 
-            <Grid container spacing={2}>
+              {/* Loss Function */}
+              <Grid size={{ xs: 12, sm: 12 / 2, md: 12 / 4 }}>
+                <Select
+                  fullWidth
+                  label='Loss Function'
+                  value={updateConfig.lossFunction}
+                  onChange={(ev) => setUpdateConfig(last => ({ ...last, lossFunction: ev.target.value as LossFunctions }))}
+                  sx={{
+                    color: 'white',
+                    bgcolor: '#1a2632',
+                    borderColor: '#344d65',
+                    height: 56,
+                    '& .MuiSelect-icon': {
+                      color: 'secondary'
+                    }
+                  }}
+                >
+                  <MenuItem value="MSE">Mean Squared Error</MenuItem>
+                  <MenuItem value="RMSE">Root Mean Squared Error</MenuItem>
+                </Select>
+              </Grid>
 
-              {projects.map((project, idx) => {
-                return <Grid
-                  key={idx}
-                  size={{ xs: 12, sm: 12 / 2, md: 12 / 4 }}>
-                  <ProjectItem
-                    isMobile={isMobile}
-                    title={project.name}
-                    description={project.description ?? ""}
-                    onClick={() => { navigate(`/app/project/${project.id}`) }}
-                    onDelete={() => setProjectToRemove(project.id)}
-                    onEdit={() => {
-                      setEditProject({
-                        id: project.id,
-                        name: project.name,
-                        description: project.description,
-                      });
-                      setProjectModalKey(generateRandomHash(8))
-                    }}
-                  />
-                </Grid>;
-              })}
+              {/* Button */}
+              <Grid size={12}>
+                <Button fullWidth variant="contained" onClick={handleSetConfig}>
+                  Apply
+                </Button>
+              </Grid>
 
             </Grid>
+          </Box>
 
-          </Container>
+          {/* Gráficos das métricas */}
+          <Typography variant="h5" fontWeight="bold" px={2} py={3}>Training Metrics</Typography>
+          <Grid container spacing={3} px={2} pb={3}>
+
+            {/* LOSS */}
+            <Grid size={{ xs: 12, sm: 12 / 2, md: 12 / 4 }}>
+              <Paper sx={{ p: 4, border: '1px solid asd', bgcolor: 'primary' }}>
+
+                <Typography>Loss</Typography>
+                <Typography variant="h3" fontWeight="bold">{(epochs.length > 0 ? epochs[epochs.length - 1].loss : 0).toFixed(5)}</Typography>
+
+                <Box display="flex" gap={1}>
+                  <Typography color="primary">Epoch {(epochs.length + 1).toFixed(0)}</Typography>
+                  {evoLoss && <Typography color={evoLoss < 0 ? "error" : "success"} fontWeight="medium">{evoLoss.toFixed(5)}</Typography>}
+                </Box>
+
+                {/* Chart */}
+                <Box height={180} my={2}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={
+                        epochs.map((epoch, idx) => ({
+                          epoch: idx + 1,
+                          loss: epoch.loss,
+                        }))
+                      }>
+                      <XAxis dataKey="epoch"
+                        tick={{ fill: theme.palette.text.primary }}          // Cor dos rótulos
+                        axisLine={{ stroke: theme.palette.text.primary }}    // Cor da linha do eixo
+                        tickLine={{ stroke: theme.palette.text.primary }}    // Cor dos tracinhos
+                      />
+                      <YAxis
+                        dataKey="loss"
+                        tickFormatter={(value: number) => value.toExponential(2)}
+                        domain={['auto', 'auto']}
+                        tick={{ fill: theme.palette.text.primary }}          // Cor dos rótulos
+                        axisLine={{ stroke: theme.palette.text.primary }}    // Cor da linha do eixo
+                        tickLine={{ stroke: theme.palette.text.primary }}    // Cor dos tracinhos
+                      />
+                      <Line type="monotone" dataKey="loss" stroke={theme.palette.primary.main} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+
+              </Paper>
+            </Grid>
+
+            {/* Accuracy */}
+            <Grid size={{ xs: 12, sm: 12 / 2, md: 12 / 4 }}>
+              <Paper sx={{ p: 4, border: '1px solid asd', bgcolor: 'primary' }}>
+
+                <Typography>Accuracy</Typography>
+                <Typography variant="h3" fontWeight="bold">{((epochs.length > 0 ? epochs[epochs.length - 1].acc : 0) * 100).toFixed(2) + "%"}</Typography>
+
+                <Box display="flex" gap={1}>
+                  <Typography color="primary">Epoch {(epochs.length + 1).toFixed(0)}</Typography>
+                  {evoAcc && <Typography color={evoAcc < 0 ? "error" : "success"} fontWeight="medium">{(evoAcc * 100).toFixed(2) + "%"}</Typography>}
+                </Box>
+
+                {/* Chart */}
+                <Box height={180} my={2}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={
+                        epochs.map((epoch, idx) => ({
+                          epoch: idx + 1,
+                          acc: epoch.acc,
+                        }))
+                      }>
+                      <XAxis
+                        dataKey="epoch"
+                        tick={{ fill: theme.palette.text.primary }}          // Cor dos rótulos
+                        axisLine={{ stroke: theme.palette.text.primary }}    // Cor da linha do eixo
+                        tickLine={{ stroke: theme.palette.text.primary }}    // Cor dos tracinhos
+                      />
+                      <YAxis
+                        dataKey="acc"
+                        tickFormatter={(value: number) => value.toExponential(2)}
+                        domain={['auto', 'auto']}
+                        tick={{ fill: theme.palette.text.primary }}          // Cor dos rótulos
+                        axisLine={{ stroke: theme.palette.text.primary }}    // Cor da linha do eixo
+                        tickLine={{ stroke: theme.palette.text.primary }}    // Cor dos tracinhos
+                      />
+                      <Bar
+                        type="monotone"
+                        dataKey="acc"
+                        stroke={theme.palette.primary.main}
+                        fill={theme.palette.primary.main}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </Box>
+              </Paper>
+            </Grid>
+          </Grid>
 
           {/* Footer */}
           <Divider />
-          <Typography align='center' fontSize={12}>
-            {`© ${new Date(Date.now()).getFullYear()} Paradigma. All rights reserved.`}
-          </Typography>
+          <Box sx={{ height: "36px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+            <Typography align='center' fontSize={12}>
+              {`© ${new Date(Date.now()).getFullYear()} Paradigma. All rights reserved.`}
+            </Typography>
+          </Box>
         </Box>
-      </Box >
-    </>);
+      </Box>
+
+    </>
+  );
 };
-
-interface ProjectItemProps {
-  isMobile?: boolean;
-  title: string;
-  description: string;
-  onClick?: () => void;
-  onDelete?: () => void;
-  onEdit?: () => void;
-}
-const ProjectItem: React.FC<ProjectItemProps> = ({
-  isMobile,
-  title,
-  description,
-  onClick,
-  onDelete,
-  onEdit,
-}) => {
-
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (onDelete) onDelete();
-  }
-
-  const handleEdit = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (onEdit) onEdit();
-  }
-
-  return (
-    <Box sx={{
-      flex: 1,
-      display: "flex",
-      flexDirection: "column",
-    }}>
-
-      <Card
-        sx={{
-          height: '13em',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: isMobile ? 4 : 6,
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: isMobile ? 0 : '12px',
-          transition: 'transform 0.2s, box-shadow 0.2s',
-          position: "relative",
-          mb: "0.5em",
-          '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: '0 6px 20px rgba(0,0,0,0.1)'
-          }
-        }}
-      >
-        <Box sx={{
-          position: 'absolute',
-          right: 8,
-          top: 8,
-          zIndex: 2,
-          display: "flex",
-          flexDirection: "row",
-        }}>
-          <IconButton
-            aria-label="close"
-            onClick={handleEdit}
-            size='small'
-          >
-            <Edit fontSize='small' />
-          </IconButton>
-
-          <IconButton
-            aria-label="close"
-            onClick={handleDelete}
-            size='small'
-          >
-            <DeleteForever fontSize='small' />
-          </IconButton>
-        </Box>
-
-        <CardActionArea onClick={onClick} sx={{ height: '100%', width: "100%" }}>
-          <ParticleGraph seed={title} style={{ height: '100%', width: '100%' }} />
-        </CardActionArea>
-      </Card>
-
-      <Typography fontWeight={'bold'} fontSize={16} textAlign={'justify'}>
-        {title}
-      </Typography>
-
-      <Typography fontSize={14} textAlign={'justify'}>
-        {description}
-      </Typography>
-
-    </Box>);
-}

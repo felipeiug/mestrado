@@ -21,7 +21,7 @@ export const LayersProvider: React.FC<Props> = ({ children }) => {
   const timer = useRef<NodeJS.Timeout>(null);
 
   useEffect(() => {
-    //TODO:Adicionar o usuário if (!user) return;
+    if (!user) return;
 
     timer.current = setTimeout(() => {
       api.layers.getLayers().then((value) => {
@@ -29,7 +29,7 @@ export const LayersProvider: React.FC<Props> = ({ children }) => {
           setError(value);
           return;
         }
-        setLayers([...value]);
+        setLayers([...value] as LayerType[]);
       });
     }, 100);
 
