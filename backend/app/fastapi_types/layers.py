@@ -1,9 +1,11 @@
-from typing import Union, Tuple, Optional, Any
+from typing import Union, Tuple, Optional, Any, Callable
 from pydantic import BaseModel, Field
 import torch.nn as nn
+import torch
 
 class Linear(BaseModel):
     name: str = "Linear"
+    category: str = "Dense"
     desc: str = """
 ## Camada Linear (`nn.Linear`)
 
@@ -56,6 +58,7 @@ output = layer(input_data)  # Formato: (32, 128)
 
 class Conv1d(BaseModel):
     name: str = "Conv1d"
+    category: str = "Convolution"
     desc: str = """
 ## Camada Conv1D (`nn.Conv1d`)
 
@@ -99,6 +102,7 @@ Cada filtro:
 
 class Conv2d(BaseModel):
     name: str = "Conv2d"
+    category: str = "Convolution"
     desc: str = """
 ## Camada de Convolução 2D (`nn.Conv2d`)
 
@@ -168,6 +172,7 @@ output = conv_layer(input_images)  # Saída: (16, 64, 128, 128)
 
 class LSTM(BaseModel):
     name: str = "LSTM"
+    category: str = "Recurrent"
     desc: str = """
 ## Camada LSTM (`nn.LSTM`)
 
@@ -236,6 +241,7 @@ input → LSTM_Camada1 → LSTM_Camada2 → LSTM_Camada3 → output
 
 class Dropout(BaseModel):
     name: str = "Dropout"
+    category: str = "Regularization"
     desc: str = """
     Técnica de regularização que "desliga" aleatoriamente neurônios durante o treinamento.
     Previne que a rede neural dependa demais de poucos neurônios específicos.
@@ -251,6 +257,7 @@ class Dropout(BaseModel):
 
 class BatchNorm2d(BaseModel):
     name: str = "BatchNorm2d"
+    category: str = "Normalization"
     desc: str = """
     Normaliza os dados entre camadas para manter a escala consistente durante o treinamento.
     Equivale a colocar todos os recursos na mesma "régua" antes de processar.
@@ -266,6 +273,7 @@ class BatchNorm2d(BaseModel):
 
 class MultiheadAttention(BaseModel):
     name: str = "MultiheadAttention"
+    category: str = "Attention"
     desc: str = """
     Mecanismo de atenção que permite ao modelo focar em partes diferentes da entrada simultaneamente.
     Como um time de especialistas onde cada um analisa um aspecto diferente dos dados.
@@ -285,6 +293,7 @@ class MultiheadAttention(BaseModel):
 
 class ReLU(BaseModel):
     name: str = "ReLU"
+    category: str = "Activation"
     desc: str = """
 # ReLU (Rectified Linear Unit)
 **Fórmula**: `max(0, x)`
@@ -300,6 +309,7 @@ class ReLU(BaseModel):
 
 class Sigmoid(BaseModel):
     name: str = "Sigmoid"
+    category: str = "Activation"
     desc: str = """
 # Sigmoid
 **Fórmula**: `1 / (1 + exp(-x))`
@@ -314,6 +324,7 @@ class Sigmoid(BaseModel):
 
 class Tanh(BaseModel):
     name: str = "Tanh"
+    category: str = "Activation"
     desc: str = """
 # Tanh (Tangente Hiperbólica)
 **Fórmula**: `(exp(x) - exp(-x)) / (exp(x) + exp(-x))`
@@ -328,6 +339,7 @@ class Tanh(BaseModel):
 
 class LeakyReLU(BaseModel):
     name: str = "LeakyReLU"
+    category: str = "Activation"
     desc: str = """
 # LeakyReLU
 **Fórmula**: `max(αx, x)` onde α é pequeno (ex: 0.01)
@@ -346,6 +358,7 @@ class LeakyReLU(BaseModel):
 
 class GELU(BaseModel):
     name: str = "GELU"
+    category: str = "Activation"
     desc: str = """
 # GELU (Gaussian Error Linear Unit)
 **Fórmula**: `x * Φ(x)` (onde Φ é a CDF da distribuição normal)
@@ -360,6 +373,7 @@ class GELU(BaseModel):
 
 class SiLU(BaseModel):
     name: str = "SiLU"
+    category: str = "Activation"
     desc: str = """
 # SiLU (Sigmoid-Weighted Linear Unit)
 **Fórmula**: `x * sigmoid(x)`
@@ -374,6 +388,7 @@ class SiLU(BaseModel):
 
 class Softmax(BaseModel):
     name: str = "Softmax"
+    category: str = "Activation"
     desc: str = """
 # Softmax
 **Fórmula**: `exp(x_i) / Σ(exp(x_j))`
@@ -389,6 +404,7 @@ class Softmax(BaseModel):
 
 class MoE(BaseModel):
     name: str = "MoE"
+    category: str = "Mixture"
     desc: str = """
 ## 🧠 Mixture of Experts (MoE) - O que é?
 
@@ -433,4 +449,99 @@ class MixtureOfExperts(nn.Module):
     out_features: int
     bias: bool = True
 
-LayerType = Union[MoE, LSTM, GELU, SiLU, ReLU, Tanh, Linear, Conv1d, Conv2d, Softmax, Dropout, Sigmoid, LeakyReLU, BatchNorm2d, MultiheadAttention]
+
+class Flatten(BaseModel):
+    name: str = "Flatten"
+    category: str = "Computation"
+    desc: str = """
+# Flatten
+Transforma um tensor multidimensional em um vetor 1D por amostra.
+
+- Entrada: (batch_size, C, H, W)
+- Saída: (batch_size, CxHxW)
+
+### Exemplo prático:
+- Usado antes de camadas lineares (fully connected) após convoluções.
+- Equivalente a "desenrolar" a imagem para que possa ser processada por uma MLP.
+"""
+    start_dim: int = 1
+    end_dim: int = -1
+
+    def __call__(self) -> nn.Module:
+        return nn.Flatten(start_dim=self.start_dim, end_dim=self.end_dim)
+
+class MatMul(BaseModel):
+    name: str = "MatMul"
+    category: str = "Computation"
+    desc: str = """
+# MatMul (Multiplicação de Matrizes)
+Executa a multiplicação de dois tensores usando regras de álgebra linear.
+
+- Equivalente a `torch.matmul(a, b)`
+- Suporta broadcast se os tensores forem compatíveis.
+
+### Exemplo prático:
+- Em mecanismos de atenção: Q·K^T
+- Em transformação de embeddings com pesos treináveis.
+
+⚠️ Normalmente usada em `forward`, mas pode ser incluída como camada auxiliar customizada.
+"""
+    def __call__(self) -> Callable[[torch.Tensor, torch.Tensor], torch.Tensor]:
+        return torch.matmul
+
+class Add(BaseModel):
+    name: str = "Add"
+    category: str = "Computation"
+    desc: str = """
+# Add (Soma de Tensores)
+Soma dois tensores elemento a elemento.
+
+- Pode ser usado para conexões residuais (skip connections).
+- Suporta broadcasting.
+
+### Exemplo prático:
+- `output = input + residual`
+- Muito usado em ResNets e Transformers.
+"""
+    def __call__(self) -> Callable[[torch.Tensor, torch.Tensor], torch.Tensor]:
+        return torch.add
+
+class Reshape(BaseModel):
+    name: str = "Reshape"
+    category: str = "Computation"
+    desc: str = """
+# Reshape
+Muda a forma (dimensões) de um tensor sem alterar os dados.
+
+- Similar ao `numpy.reshape` ou `tensor.view`.
+
+### Exemplo prático:
+- Transformar (batch, 3, 32, 32) em (batch, 3072) antes de uma camada densa.
+"""
+    shape: tuple[int, ...]
+
+    def __call__(self) -> Callable[[torch.Tensor], torch.Tensor]:
+        return lambda x: x.view(*self.shape)
+
+class Permute(BaseModel):
+    name: str = "Permute"
+    category: str = "Computation"
+    desc: str = """
+# Permute
+Reordena as dimensões de um tensor.
+
+- Similar a `transpose`, mas permite mais de duas dimensões.
+
+### Exemplo prático:
+- Mudar (batch, seq_len, features) → (seq_len, batch, features) para RNNs.
+"""
+    dims: tuple[int, ...]
+
+    def __call__(self) -> Callable[[torch.Tensor], torch.Tensor]:
+        return lambda x: x.permute(*self.dims)
+
+
+LayerType = Union[
+    MoE, LSTM, GELU, SiLU, ReLU, Tanh, Linear, Conv1d, Conv2d, Softmax, Dropout, Sigmoid, LeakyReLU, BatchNorm2d, MultiheadAttention,
+    Flatten, MatMul, Add, Reshape, Permute,
+]

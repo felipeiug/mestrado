@@ -14,6 +14,11 @@ from app.fastapi_types.layers import (
     LeakyReLU,
     BatchNorm2d,
     MultiheadAttention,
+    Flatten,
+    MatMul,
+    Add,
+    Reshape,
+    Permute,
     LayerType,
 )
 from app.fastapi_types.paginate import Paginate

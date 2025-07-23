@@ -14,6 +14,11 @@ from app.fastapi_types import (
     LeakyReLU,
     BatchNorm2d,
     MultiheadAttention,
+    Flatten,
+    MatMul,
+    Add,
+    Reshape,
+    Permute,
     LayerType,
 )
 
@@ -61,5 +66,10 @@ async def get_layers(db: Session = Depends(get_db)):
         LeakyReLU().model_dump(),
         BatchNorm2d(num_features=1).model_dump(),
         MultiheadAttention(embed_dim=1, num_heads=1).model_dump(),
+        Add().model_dump(),
+        MatMul().model_dump(),
+        Flatten().model_dump(),
+        Permute(dims=(1, 4)).model_dump(),
+        Reshape(shape=(1, 2)).model_dump(),
     ]
 
