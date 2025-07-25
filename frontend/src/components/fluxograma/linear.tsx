@@ -20,24 +20,6 @@ export function LinearLayer(nodeData: Node<Linear>) {
     setShape([nodeData.data.inShape, nodeData.data.outShape]);
   }, [edges]);
 
-  // Atualizando as conexões
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      console.log("AAAAA");
-
-      const eds = edges.filter(ed => ed.id.startsWith(nodeData.id));
-
-      
-
-      // if(eds.length > 0){
-      //   setEdges
-      // }
-
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [shape]);
-
   const validateConnection = (edge: EdgeBase | Connection) => {
     if (edge.source === edge.target) return false;
 

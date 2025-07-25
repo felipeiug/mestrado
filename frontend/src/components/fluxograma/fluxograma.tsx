@@ -15,13 +15,15 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { LinearLayer } from './linear';
-import { generateRandomHash, LayerBase, LayerTypeName } from '../../core';
+import { generateRandomHash, LayerBase, LayerTypeName, LSTM } from '../../core';
 import { Box, Menu, MenuItem, Typography } from '@mui/material';
 import { ContentCopy, Delete, Help, Settings } from '@mui/icons-material';
 import { FlowType, useAppThemeContext } from '../../context';
+import { LSTMLayer } from './lstm';
 
 const nodeTypes: any = {
-  linearLayer: LinearLayer
+  linearLayer: LinearLayer,
+  lstmLayer: LSTMLayer,
 };
 
 export type FluxogramaProps = {
@@ -44,15 +46,17 @@ export const Fluxograma: React.FC<FluxogramaProps> = ({ initialFlow, onHelp, onP
     {
       id: generateRandomHash(8),
       data: {
-        name: "Linear",
+        name: "LSTM",
         category: "",
+        hiddenSize: 2,
+        numLayers: 1,
         inShape: [8],
         outShape: [64],
         validateInShape: (shape) => shape.length === 1,
         validateOutShape: (_) => false,
-      },
+      } as LSTM,
       position: { x: 0, y: 0 },
-      type: 'linearLayer',
+      type: 'lstmLayer',
     },
     {
       id: generateRandomHash(8),
