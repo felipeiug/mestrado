@@ -33,6 +33,7 @@ export type Conv2d = LayerBase & {
 export type LSTM = LayerBase & {
   name: 'LSTM';
   hiddenSize: number;
+  inShape: [number, number]; //[timesteps, features]
   numLayers?: number;
 }
 

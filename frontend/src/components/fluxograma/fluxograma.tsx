@@ -1,17 +1,15 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import {
   ReactFlow,
   Controls,
   Background,
-  applyNodeChanges,
-  applyEdgeChanges,
-  addEdge,
   Node,
   Edge,
   useReactFlow,
   EdgeMouseHandler,
   useEdgesState,
   useNodesState,
+  OnConnect,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { LinearLayer } from './linear';
@@ -34,15 +32,15 @@ export type FluxogramaProps = {
 
 export const Fluxograma: React.FC<FluxogramaProps> = ({ initialFlow, onHelp, onProperties }) => {
   const { themeType } = useAppThemeContext();
-  const { setCenter, addNodes } = useReactFlow();
+  const reactFlow = useReactFlow();
 
   const [contextMenu, setContextMenu] = useState<{
     mouseX: number;
     mouseY: number;
     node: Node<LayerBase>;
   } | null>(null);
-  const [edges, setEdges] = useEdgesState<Edge>([]);
-  const [nodes, setNodes] = useNodesState<Node<LayerBase>>([
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node<LayerBase>>([
     {
       id: generateRandomHash(8),
       data: {
@@ -50,8 +48,8 @@ export const Fluxograma: React.FC<FluxogramaProps> = ({ initialFlow, onHelp, onP
         category: "",
         hiddenSize: 2,
         numLayers: 1,
-        inShape: [8],
-        outShape: [64],
+        inShape: [8, 2],
+        outShape: [2, 2, 64],
         validateInShape: (shape) => shape.length === 1,
         validateOutShape: (_) => false,
       } as LSTM,
@@ -99,8 +97,8 @@ export const Fluxograma: React.FC<FluxogramaProps> = ({ initialFlow, onHelp, onP
     setEdges((eds) => eds.filter((edge) => !edge.source.startsWith(contextMenu.node.id) && !edge.target.startsWith(contextMenu.node.id)));
   };
 
-  const handleRemoveEdge: EdgeMouseHandler<Edge> = (ev, ed) => {
-    setEdges(edges => edges.filter(edge => edge.id !== ed.id));
+  const handleRemoveEdge: EdgeMouseHandler<Edge> = (_, ed) => {
+    reactFlow.deleteElements({ edges: [ed] });
   };
 
   const handleDuplicate = () => {
@@ -116,27 +114,25 @@ export const Fluxograma: React.FC<FluxogramaProps> = ({ initialFlow, onHelp, onP
       id: generateRandomHash(8),
     };
 
-    nodes.push(node);
-    addNodes([node]);
+    reactFlow.addNodes([node]);
     setContextMenu(null);
   };
 
   const handleHelp = () => {
-    if (onHelp && contextMenu) onHelp(contextMenu.node.data.name);
+    if (contextMenu) onHelp?.(contextMenu.node.data.name);
     setContextMenu(null);
   };
   const handleProperties = () => {
-    if (onProperties && contextMenu) onProperties(contextMenu.node.data);
+    if (contextMenu) onProperties?.(contextMenu.node.data);
     setContextMenu(null);
   };
 
 
-
   const onNodeClick = (_: React.MouseEvent, node: Node<LayerBase>) => {
-    if (onProperties) onProperties(node.data);
+    onProperties?.(node.data);
 
     setTimeout(() => {
-      setCenter(node.position.x, node.position.y);
+      reactFlow.setCenter(node.position.x, node.position.y);
     }, 100);
   }
   const onNodeContextMenu = (event: React.MouseEvent, node: Node<LayerBase>) => {
@@ -148,21 +144,14 @@ export const Fluxograma: React.FC<FluxogramaProps> = ({ initialFlow, onHelp, onP
     });
   }
 
+  const onConnect: OnConnect = (conn) => {
+    const edge: Edge = {
+      ...conn,
+      id: generateRandomHash(8),
+    };
 
-  const onNodesChange = useCallback(
-    (changes: any) => setNodes((nds) => applyNodeChanges(changes, nds)),
-    [],
-  );
-  const onEdgesChange = useCallback(
-    (changes: any) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [],
-  );
-  const onConnect = useCallback(
-    (params: any) => {
-      setEdges((eds) => addEdge(params, eds));
-    },
-    [nodes],
-  );
+    reactFlow.addEdges(edge);
+  };
 
   return (<>
 
@@ -222,6 +211,7 @@ export const Fluxograma: React.FC<FluxogramaProps> = ({ initialFlow, onHelp, onP
             nodeTypes={nodeTypes}
 
             onNodeClick={onNodeClick}
+
             onNodeContextMenu={onNodeContextMenu}
             onEdgeDoubleClick={handleRemoveEdge}
           >

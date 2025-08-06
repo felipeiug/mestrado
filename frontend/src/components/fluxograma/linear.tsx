@@ -48,28 +48,32 @@ export function LinearLayer(nodeData: Node<Linear>) {
 
   return <>
     <Handle
-      key={nodeData.id + "_T1"}
+      id={nodeData.id + "_T1"}
       type="target"
       position={Position.Right}
       isValidConnection={validateConnection}
       style={{
         width: 8,
         height: 8,
-        right: -(8 / 2),
+        right: 0,
         top: 46 / 2,
+        borderRadius: "50%",
+        border: "0px solid black",
         backgroundColor: theme.palette.primary.dark
       }}
     />
     <Handle
-      key={nodeData.id + "_S1"}
+      id={nodeData.id + "_S1"}
       type="source"
       position={Position.Left}
       isValidConnection={validateConnection}
       style={{
-        width: 8,
+        width: 4,
         height: 8,
-        left: -(8 / 2),
+        left: 0,
         top: 46 / 2,
+        borderRadius: 2,
+        border: "0px solid black",
         backgroundColor: theme.palette.primary.dark
       }}
     />

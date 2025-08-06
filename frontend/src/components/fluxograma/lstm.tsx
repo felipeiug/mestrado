@@ -1,20 +1,19 @@
-import { Add, AddCircle, Remove, Timeline } from '@mui/icons-material';
+import { Add, Remove, Timer } from '@mui/icons-material';
 import { Box, IconButton, Paper, TextField, Tooltip, Typography, useTheme } from '@mui/material';
 import { Connection, Handle, Node, useEdges, useNodes } from '@xyflow/react';
 import { EdgeBase, Position } from '@xyflow/system';
-import { LayerType, Linear } from '../../core';
+import { LayerType, LSTM } from '../../core';
 import { useEffect, useState } from 'react';
 
 
-export function LSTMLayer(nodeData: Node<Linear>) {
+export function LSTMLayer(nodeData: Node<LSTM>) {
   const theme = useTheme();
-  const color = "#ceeebeff";
+  const color = "#ffd51bff";
 
   const nodes = useNodes<Node<LayerType>>();
   const edges = useEdges();
 
   const [shape, setShape] = useState([nodeData.data.inShape, nodeData.data.outShape]);
-  const [bias, setBias] = useState(nodeData.data.bias ?? true);
 
   useEffect(() => {
     setShape([nodeData.data.inShape, nodeData.data.outShape]);
@@ -36,11 +35,6 @@ export function LSTMLayer(nodeData: Node<Linear>) {
     return valid;
   };
 
-  const handleChangeBias = () => {
-    nodeData.data.bias = !bias;
-    setBias(!bias);
-  };
-
   const handleChangeOutput = (output: number) => {
     nodeData.data.outShape = [output];
     setShape([nodeData.data.inShape, [output]]);
@@ -48,7 +42,39 @@ export function LSTMLayer(nodeData: Node<Linear>) {
 
   return <>
     <Handle
-      key={nodeData.id + "_Ct"}
+      id={nodeData.id + "_Xt"}
+      type="source"
+      position={Position.Top}
+      isValidConnection={validateConnection}
+      style={{
+        width: 4,
+        height: 8,
+        left: 4 + ((46 - 4) / 4),
+        top: 0,
+        borderRadius: 2,
+        border: "0px solid black",
+        backgroundColor: theme.palette.primary.dark
+      }}
+    />
+    <Handle
+      id={nodeData.id + "_Yt"}
+      type="target"
+      position={Position.Top}
+      isValidConnection={validateConnection}
+      style={{
+        width: 8,
+        height: 8,
+        left: 4 + ((46 - 4) * 2 / 3),
+        top: 0,
+        borderRadius: "50%",
+        border: "0px solid black",
+        backgroundColor: theme.palette.primary.dark
+      }}
+    />
+
+
+    <Handle
+      id={nodeData.id + "_Ct"}
       type="target"
       position={Position.Right}
       isValidConnection={validateConnection}
@@ -56,12 +82,11 @@ export function LSTMLayer(nodeData: Node<Linear>) {
         width: 4,
         height: 4,
         right: -(4 / 2),
-        top: (46 * 2) * 0.2,
+        top: 46 / 4,
         backgroundColor: theme.palette.primary.dark,
-      }}
-    />
+      }} />
     <Handle
-      key={nodeData.id + "_Yt"}
+      id={nodeData.id + "_Ht"}
       type="target"
       position={Position.Right}
       isValidConnection={validateConnection}
@@ -69,27 +94,14 @@ export function LSTMLayer(nodeData: Node<Linear>) {
         width: 4,
         height: 4,
         right: -(4 / 2),
-        top: (46 * 2) * 0.5,
-        backgroundColor: theme.palette.primary.dark,
-      }}
-    />
-    <Handle
-      key={nodeData.id + "_Ht"}
-      type="target"
-      position={Position.Right}
-      isValidConnection={validateConnection}
-      style={{
-        width: 4,
-        height: 4,
-        right: -(4 / 2),
-        top: (46 * 2) * 0.8,
+        top: 46 * 2 / 3,
         backgroundColor: theme.palette.primary.dark,
       }}
     />
 
 
     <Handle
-      key={nodeData.id + "_Ct-1"}
+      id={nodeData.id + "_Ct-1"}
       type="source"
       position={Position.Left}
       isValidConnection={validateConnection}
@@ -97,12 +109,12 @@ export function LSTMLayer(nodeData: Node<Linear>) {
         width: 4,
         height: 4,
         left: -(4 / 2),
-        top: (46 * 2) * 0.2,
+        top: 46 / 4,
         backgroundColor: theme.palette.primary.dark
       }}
     />
     <Handle
-      key={nodeData.id + "_Ht-1"}
+      id={nodeData.id + "_Ht-1"}
       type="source"
       position={Position.Left}
       isValidConnection={validateConnection}
@@ -110,31 +122,16 @@ export function LSTMLayer(nodeData: Node<Linear>) {
         width: 4,
         height: 4,
         left: -(4 / 2),
-        top: (46 * 2) * 0.8,
+        top: 46 * 2 / 3,
         backgroundColor: theme.palette.primary.dark
       }}
     />
-    <Handle
-      key={nodeData.id + "_Xt"}
-      type="source"
-      position={Position.Left}
-      isValidConnection={validateConnection}
-      style={{
-        width: 4,
-        height: 4,
-        left: -(4 / 2),
-        top: (46 * 2) * 0.5,
-        backgroundColor: theme.palette.primary.dark
-      }}
-    />
-
-
 
     {/* Conteúdo */}
     <Box
       sx={{
         gap: "1px",
-        width: 46 * 4,
+        width: 46,
         display: 'flex',
         cursor: "pointer",
         flexDirection: "column",
@@ -145,23 +142,17 @@ export function LSTMLayer(nodeData: Node<Linear>) {
         elevation={3}
         sx={{
           p: 0,
-          width: 46 * 4,
-          height: 46 * 2,
+          width: 46,
+          height: 46,
           display: "flex",
-          alignItems: "center",
-          backgroundColor: color,
           flexDirection: "column",
+          alignItems: "center",
           justifyContent: "center",
-          // borderLeft: color ? `4px solid ${color}` : undefined,
+          borderLeft: color ? `4px solid ${color}` : undefined,
           '&:hover': { boxShadow: theme.shadows[6] },
         }}
       >
-
-        <SVGLSTM
-          height={46 * 2}
-          width={46 * 4}
-        />
-
+        <Timer sx={{ fontSize: 22, color: color }} />
       </Paper >
 
       {/* Título e nome */}
@@ -175,34 +166,57 @@ export function LSTMLayer(nodeData: Node<Linear>) {
         </Typography>
 
         <Tooltip
+          sx={{ bgcolor: "#ffffffff" }}
           title={
-            <Box display="flex" alignItems="center" gap={0.5} p={0.5}>
-              <IconButton size="small" onClick={() => handleChangeOutput(Math.max(1, shape[1][0] - 1))}>
-                <Remove fontSize="inherit" />
-              </IconButton>
+            <Box>
+              <Typography
+                fontSize={12}
+                fontWeight="bold"
+                textAlign="center"
+              >
+                Unidades LSTM
+              </Typography>
+              <Box display="flex" alignItems="center" gap={0.5} p={0.5}>
+                <IconButton size="small" onClick={(ev) => {
+                  ev.preventDefault();
+                  ev.stopPropagation();
 
-              <TextField
-                type="number"
-                value={shape[1]}
-                onChange={(e) => {
-                  const value = Math.max(1, Number(e.target.value));
-                  handleChangeOutput(value);
-                }}
-                inputProps={{
-                  min: 1,
-                  style: {
-                    textAlign: 'center',
-                    fontSize: 12,
-                    width: 56,
-                    padding: 0,
-                  },
-                }}
-                variant="standard"
-              />
+                  handleChangeOutput(Math.max(1, shape[1][0] - 1));
+                }}>
+                  <Remove fontSize="inherit" />
+                </IconButton>
 
-              <IconButton size="small" onClick={() => handleChangeOutput(shape[1][0] + 1)}>
-                <Add fontSize="inherit" />
-              </IconButton>
+                <TextField
+                  type="number"
+                  value={shape[1]}
+                  onChange={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const value = Math.max(1, Number(e.target.value));
+                    handleChangeOutput(value);
+                  }}
+                  inputProps={{
+                    min: 1,
+                    style: {
+                      textAlign: 'center',
+                      fontSize: 12,
+                      width: 56,
+                      padding: 0,
+                    },
+                  }}
+                  variant="standard"
+                />
+
+                <IconButton size="small" onClick={(ev) => {
+                  ev.preventDefault();
+                  ev.stopPropagation();
+
+                  handleChangeOutput(shape[1][0] + 1);
+                }}>
+                  <Add fontSize="inherit" />
+                </IconButton>
+              </Box>
             </Box>
           }
           arrow
@@ -223,11 +237,12 @@ export function LSTMLayer(nodeData: Node<Linear>) {
               },
             }}
           >
-            [{shape[0]}, {shape[1]}]
+            [{shape[1]}]
           </Typography>
         </Tooltip>
 
       </Box>
+
     </Box >
   </>;
 };
@@ -236,7 +251,7 @@ interface SVGLSTMProps {
   width: number;
   height: number;
 }
-const SVGLSTM: React.FC<SVGLSTMProps> = ({ height, width }) => {
+export const SVGLSTM: React.FC<SVGLSTMProps> = ({ height, width }) => {
   return (
     <>
       {/* SVG LSTM */}
