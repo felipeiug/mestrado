@@ -1,54 +1,74 @@
 import { Add, AddCircle, Remove, Timeline } from '@mui/icons-material';
 import { Box, IconButton, Paper, TextField, Tooltip, Typography, useTheme } from '@mui/material';
-import { Connection, Handle, Node, useEdges, useNodes } from '@xyflow/react';
+import { Connection, Handle, Node, useReactFlow } from '@xyflow/react';
 import { EdgeBase, Position } from '@xyflow/system';
-import { LayerType, Linear } from '../../core';
-import { useEffect, useState } from 'react';
+import { Linear } from '../../core';
 
 
 export function LinearLayer(nodeData: Node<Linear>) {
   const theme = useTheme();
   const color = "rgb(175, 214, 46)";
+  const { getNode, getNodeConnections } = useReactFlow();
 
-  const nodes = useNodes<Node<LayerType>>();
-  const edges = useEdges();
-
-  const [shape, setShape] = useState([nodeData.data.inShape, nodeData.data.outShape]);
-  const [bias, setBias] = useState(nodeData.data.bias ?? true);
-
-  useEffect(() => {
-    setShape([nodeData.data.inShape, nodeData.data.outShape]);
-  }, [edges]);
+  let shape = [nodeData.data.inShape, nodeData.data.outShape];
+  const bias = nodeData.data.bias ?? true;
 
   const validateConnection = (edge: EdgeBase | Connection) => {
     if (edge.source === edge.target) return false;
 
-    const nodeSource = nodes.filter(value => value.id === edge.source)[0];
-    const nodeTarget = nodes.filter(value => value.id === edge.target)[0];
-    const valid = nodeSource.data.validateInShape(nodeTarget.data.outShape);
+    const nodeSource = getNode(edge.source) as Node<Linear>;
+    const nodeTarget = getNode(edge.target) as Node<Linear>;
 
-    for (const ed of edges) {
-      if (ed.source === nodeSource.id) return false;
-    }
+    const valid = (nodeSource.data.inShape.length === 2) && (nodeSource.data.inShape.length === nodeTarget.data.outShape.length);
+    if (!valid) return false;
 
-    if (valid) nodeSource.data.inShape = nodeTarget.data.outShape;
+    const conn = getNodeConnections({
+      type: "source",
+      nodeId: nodeSource.id,
+    });
+    if (conn.length) return false;
+
+
+    nodeSource.data.inShape = nodeTarget.data.outShape;
+    nodeSource.data.onChange?.(nodeSource);
+    nodeTarget.data.onChange?.(nodeTarget);
 
     return valid;
   };
 
-  const handleChangeBias = () => {
+  const handleChangeBias = (ev: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+
     nodeData.data.bias = !bias;
-    setBias(!bias);
+    nodeData.data.onChange?.(nodeData);
   };
 
-  const handleChangeOutput = (output: number) => {
-    nodeData.data.outShape = [output];
-    setShape([nodeData.data.inShape, [output]]);
+  const handleChangeOutput = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent> | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, output: number) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+
+    const newShape: [[number, number], [number, number]] = [nodeData.data.inShape, [nodeData.data.outShape[0], output]];
+    nodeData.data.outShape = newShape[1];
+    nodeData.data.onChange?.(nodeData);
+
+    const connections = getNodeConnections({
+      type: "target",
+      nodeId: nodeData.id,
+    });
+
+    connections.forEach(conn => {
+      const node = getNode(conn.source) as (Node<Linear> | undefined);
+      if (node) {
+        node.data.inShape = [nodeData.data.outShape[0], output];
+        node.data.onChange?.(node);
+      }
+    });
   };
 
   return <>
     <Handle
-      id={nodeData.id + "_T1"}
+      id={nodeData.id + "_T"}
       type="target"
       position={Position.Right}
       isValidConnection={validateConnection}
@@ -57,13 +77,14 @@ export function LinearLayer(nodeData: Node<Linear>) {
         height: 8,
         right: 0,
         top: 46 / 2,
+        zIndex: 5,
         borderRadius: "50%",
         border: "0px solid black",
         backgroundColor: theme.palette.primary.dark
       }}
     />
     <Handle
-      id={nodeData.id + "_S1"}
+      id={nodeData.id + "_S"}
       type="source"
       position={Position.Left}
       isValidConnection={validateConnection}
@@ -73,6 +94,7 @@ export function LinearLayer(nodeData: Node<Linear>) {
         left: 0,
         top: 46 / 2,
         borderRadius: 2,
+        zIndex: 5,
         border: "0px solid black",
         backgroundColor: theme.palette.primary.dark
       }}
@@ -101,14 +123,17 @@ export function LinearLayer(nodeData: Node<Linear>) {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
+          position: 'relative',
           borderLeft: color ? `4px solid ${color}` : undefined,
           '&:hover': { boxShadow: theme.shadows[6] },
         }}
       >
-        <div style={{ flex: 1, width: "5px", height: "15.5px" }} />
+        <Timeline sx={{
+          fontSize: 22,
+          color: color,
+          position: "absolute"
+        }} />
 
-
-        <Timeline sx={{ fontSize: 22, color: color }} />
         <div style={{
           paddingRight: "2px",
           paddingBottom: "2px",
@@ -126,28 +151,33 @@ export function LinearLayer(nodeData: Node<Linear>) {
 
       </Paper >
 
+
+      <Typography
+        fontSize={8}
+        fontWeight={"bold"}
+        textAlign={"center"}
+      >
+        Linear
+      </Typography>
+
       <Box sx={{
         width: "46px",
         display: 'flex',
         flexDirection: "column",
       }}>
-        <Typography fontSize={8} fontWeight={"bold"} textAlign={"center"}>
-          Linear
-        </Typography>
-
         <Tooltip
           title={
             <Box display="flex" alignItems="center" gap={0.5} p={0.5}>
-              <IconButton size="small" onClick={() => handleChangeOutput(Math.max(1, shape[1][0] - 1))}>
+              <IconButton size="small" onClick={(ev) => handleChangeOutput(ev, Math.max(1, shape[1][1] - 1))}>
                 <Remove fontSize="inherit" />
               </IconButton>
 
               <TextField
                 type="number"
-                value={shape[1]}
+                value={shape[1][1]}
                 onChange={(e) => {
                   const value = Math.max(1, Number(e.target.value));
-                  handleChangeOutput(value);
+                  handleChangeOutput(e, value);
                 }}
                 inputProps={{
                   min: 1,
@@ -161,7 +191,7 @@ export function LinearLayer(nodeData: Node<Linear>) {
                 variant="standard"
               />
 
-              <IconButton size="small" onClick={() => handleChangeOutput(shape[1][0] + 1)}>
+              <IconButton size="small" onClick={(ev) => handleChangeOutput(ev, shape[1][1] + 1)}>
                 <Add fontSize="inherit" />
               </IconButton>
             </Box>
@@ -184,7 +214,7 @@ export function LinearLayer(nodeData: Node<Linear>) {
               },
             }}
           >
-            [{shape[0]}, {shape[1]}]
+            [{shape[0][1]}, {shape[1][1]}]
           </Typography>
         </Tooltip>
 

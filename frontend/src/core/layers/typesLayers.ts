@@ -1,3 +1,5 @@
+import { Node } from "@xyflow/react";
+
 export type LayerTypeName = 'MoE' | 'Linear' | 'Conv1d' | 'Conv2d' | 'LSTM' | 'Dropout' | 'BatchNorm2d' | 'MultiheadAttention' | 'ReLU' | 'Sigmoid' | 'Tanh' | 'LeakyReLU' | 'GELU' | 'SiLU' | 'Softmax';
 
 export type LayerBase = {
@@ -6,13 +8,29 @@ export type LayerBase = {
   desc?: string;
   inShape: number[];
   outShape: number[];
-  validateInShape: (shape: number[]) => boolean;
-  validateOutShape: (shape: number[]) => boolean;
+  onChange?: (node: Node) => void;
 }
 
+/**
+ * The `Linear`
+ * 
+ * name: 'Linear';
+ * 
+ * bias?: boolean;
+ * 
+ * hiddenSize: number;
+ * 
+ * inShape: [number, number]; //BatchSize, inputSize
+ * 
+ * outShape: [number, number]; // BatchSize, outputSize
+ *
+ * @public
+ */
 export type Linear = LayerBase & {
   name: 'Linear';
   bias?: boolean;
+  inShape: [number, number];
+  outShape: [number, number];
 }
 
 export type Conv1d = LayerBase & {
@@ -30,11 +48,27 @@ export type Conv2d = LayerBase & {
   bias?: boolean;
 }
 
+/**
+ * The `LSTM`
+ * 
+ * name: 'LSTM';
+ * 
+ * hiddenSize: number;
+ * 
+ * returnSequences?: boolean;
+ * 
+ * inShape: [number, number, number];                    //[batchSize, timesteps, features]
+ * 
+ * outShape: [number, number, number]|[number, number];  // Caso returnSequences => [batchSize, timesteps, hiddenSize] se não [batchSize, hiddenSize]
+ *
+ * @public
+ */
 export type LSTM = LayerBase & {
   name: 'LSTM';
   hiddenSize: number;
-  inShape: [number, number]; //[timesteps, features]
-  numLayers?: number;
+  returnSequences?: boolean;
+  inShape: [number, number, number];                    //[batchSize, timesteps, features]
+  outShape: [number, number] | [number, number, number];  // Caso returnSequences => [batchSize, hiddenSize] se não [batchSize, timesteps, hiddenSize]
 }
 
 export type Dropout = LayerBase & {

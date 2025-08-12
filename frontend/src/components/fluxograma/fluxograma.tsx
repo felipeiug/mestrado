@@ -10,6 +10,7 @@ import {
   useEdgesState,
   useNodesState,
   OnConnect,
+  OnNodesChange,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { LinearLayer } from './linear';
@@ -46,12 +47,10 @@ export const Fluxograma: React.FC<FluxogramaProps> = ({ initialFlow, onHelp, onP
       data: {
         name: "LSTM",
         category: "",
-        hiddenSize: 2,
-        numLayers: 1,
-        inShape: [8, 2],
-        outShape: [2, 2, 64],
-        validateInShape: (shape) => shape.length === 1,
-        validateOutShape: (_) => false,
+        hiddenSize: 64,
+        inShape: [3, 8, 2],
+        outShape: [3, 64],
+        onChange: (node) => reactFlow.updateNodeData(node.id, node.data),
       } as LSTM,
       position: { x: 0, y: 0 },
       type: 'lstmLayer',
@@ -59,12 +58,25 @@ export const Fluxograma: React.FC<FluxogramaProps> = ({ initialFlow, onHelp, onP
     {
       id: generateRandomHash(8),
       data: {
+        name: "LSTM",
+        category: "",
+        hiddenSize: 64,
+        returnSequences: true,
+        inShape: [3, 8, 2],
+        outShape: [3, 8, 64],
+        onChange: (node) => reactFlow.updateNodeData(node.id, node.data),
+      } as LSTM,
+      position: { x: 0, y: 150 },
+      type: 'lstmLayer',
+    },
+    {
+      id: generateRandomHash(8),
+      data: {
         name: "Linear",
         category: "",
-        inShape: [32],
-        outShape: [128],
-        validateInShape: (shape) => shape.length === 1,
-        validateOutShape: (_) => false,
+        inShape: [3, 32],
+        outShape: [3, 128],
+        onChange: (node) => reactFlow.updateNodeData(node.id, node.data),
       },
       position: { x: 150, y: 75 },
       type: 'linearLayer',
@@ -74,15 +86,20 @@ export const Fluxograma: React.FC<FluxogramaProps> = ({ initialFlow, onHelp, onP
       data: {
         name: "Linear",
         category: "",
-        inShape: [64],
-        outShape: [128],
-        validateInShape: (shape) => shape.length === 1,
-        validateOutShape: (_) => false,
+        inShape: [3, 64],
+        outShape: [3, 128],
+        onChange: (node) => reactFlow.updateNodeData(node.id, node.data),
       },
       position: { x: 150, y: -75 },
       type: 'linearLayer',
     },
   ]);
+
+  const handleNodesChange: OnNodesChange<Node<LayerBase>> = (changes) => {
+    // console.log(changes);
+
+    onNodesChange(changes);
+  }
 
 
   const handleClose = () => {
@@ -203,7 +220,7 @@ export const Fluxograma: React.FC<FluxogramaProps> = ({ initialFlow, onHelp, onP
             nodes={nodes}
             edges={edges}
 
-            onNodesChange={onNodesChange}
+            onNodesChange={handleNodesChange}
             onEdgesChange={onEdgesChange}
 
             onConnect={onConnect}

@@ -1,43 +1,120 @@
-import { Add, Remove, Timer } from '@mui/icons-material';
+import { Add, AddCircle, Remove, Timer } from '@mui/icons-material';
 import { Box, IconButton, Paper, TextField, Tooltip, Typography, useTheme } from '@mui/material';
-import { Connection, Handle, Node, useEdges, useNodes } from '@xyflow/react';
+import { Connection, Edge, Handle, Node, useReactFlow } from '@xyflow/react';
 import { EdgeBase, Position } from '@xyflow/system';
-import { LayerType, LSTM } from '../../core';
-import { useEffect, useState } from 'react';
+import { LayerBase, LSTM } from '../../core';
 
 
 export function LSTMLayer(nodeData: Node<LSTM>) {
   const theme = useTheme();
   const color = "#ffd51bff";
+  const { getNode, getNodeConnections, deleteElements, getEdge } = useReactFlow();
 
-  const nodes = useNodes<Node<LayerType>>();
-  const edges = useEdges();
-
-  const [shape, setShape] = useState([nodeData.data.inShape, nodeData.data.outShape]);
-
-  useEffect(() => {
-    setShape([nodeData.data.inShape, nodeData.data.outShape]);
-  }, [edges]);
+  const shape = [nodeData.data.inShape, nodeData.data.outShape];
+  const returnSequences = nodeData.data.returnSequences;
+  const hiddenSize = nodeData.data.hiddenSize;
 
   const validateConnection = (edge: EdgeBase | Connection) => {
     if (edge.source === edge.target) return false;
 
-    const nodeSource = nodes.filter(value => value.id === edge.source)[0];
-    const nodeTarget = nodes.filter(value => value.id === edge.target)[0];
-    const valid = nodeSource.data.validateInShape(nodeTarget.data.outShape);
+    const nodeSource = getNode(edge.source) as Node<LayerBase>;
 
-    for (const ed of edges) {
-      if (ed.source === nodeSource.id) return false;
+    const conn = getNodeConnections({
+      type: "source",
+      nodeId: nodeSource.id,
+    });
+    if (conn.length) return false;
+
+    const nodeTarget = getNode(edge.target) as Node<LSTM>;
+
+    if (nodeTarget.data.returnSequences) {
+      if (nodeSource.data.inShape.length !== 3) return false;
+    } else {
+      if (nodeSource.data.inShape.length !== 2) return false;
     }
 
-    if (valid) nodeSource.data.inShape = nodeTarget.data.outShape;
+    nodeSource.data.inShape = nodeTarget.data.outShape;
+
+    nodeSource.data.onChange?.(nodeSource);
+    nodeTarget.data.onChange?.(nodeTarget);
+
+    return true;
+  };
+
+  const validateSecondaryConnection = (edge: EdgeBase | Connection) => {
+    if (edge.source === edge.target) return false;
+
+    const nodeSource = getNode(edge.source) as Node<LayerBase>;
+    const nodeTarget = getNode(edge.target) as Node<LayerBase>;
+
+    const valid = (nodeSource.data.inShape.length === 2) && (nodeSource.data.inShape.length === nodeTarget.data.outShape.length);
+    if (!valid) return false;
+
+    const conn = getNodeConnections({
+      type: "source",
+      nodeId: nodeSource.id,
+    });
+    if (conn.length) return false;
+
+    nodeSource.data.inShape = nodeTarget.data.outShape;
+    nodeSource.data.onChange?.(nodeSource);
+    nodeTarget.data.onChange?.(nodeTarget);
 
     return valid;
   };
 
-  const handleChangeOutput = (output: number) => {
-    nodeData.data.outShape = [output];
-    setShape([nodeData.data.inShape, [output]]);
+  const handleChangeSequences = (ev: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+
+    nodeData.data.returnSequences = !returnSequences;
+
+    if (nodeData.data.returnSequences) {
+      nodeData.data.outShape = [nodeData.data.outShape[0], nodeData.data.inShape[1], hiddenSize];
+    } else {
+      nodeData.data.outShape = [nodeData.data.outShape[0], hiddenSize];
+    }
+
+    const connections = getNodeConnections({
+      type: "target",
+      nodeId: nodeData.id,
+    });
+
+    const edges = connections.map(conn => getEdge(conn.edgeId)).filter(ed => ed) as Edge[];
+    deleteElements({ edges: edges });
+
+    nodeData.data.onChange?.(nodeData);
+  };
+
+  const handleChangeOutput = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent> | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, hiddenSize: number) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+
+    if (returnSequences) {
+      nodeData.data.outShape = [nodeData.data.outShape[0], nodeData.data.inShape[1], hiddenSize];
+    } else {
+      nodeData.data.outShape = [nodeData.data.outShape[0], hiddenSize];
+    }
+
+    nodeData.data.hiddenSize = hiddenSize;
+    nodeData.data.onChange?.(nodeData);
+
+    const connections = getNodeConnections({
+      type: "target",
+      nodeId: nodeData.id,
+    });
+
+    connections.forEach(conn => {
+      const node = getNode(conn.source) as (Node<LayerBase> | undefined);
+      if (node) {
+        if (returnSequences) {
+          node.data.inShape = [nodeData.data.outShape[0], nodeData.data.outShape[1], hiddenSize];
+        } else {
+          node.data.inShape = [nodeData.data.outShape[0], hiddenSize];
+        }
+        node.data.onChange?.(node);
+      }
+    });
   };
 
   return <>
@@ -52,6 +129,7 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
         left: 4 + ((46 - 4) / 4),
         top: 0,
         borderRadius: 2,
+        zIndex: 5,
         border: "0px solid black",
         backgroundColor: theme.palette.primary.dark
       }}
@@ -66,6 +144,7 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
         height: 8,
         left: 4 + ((46 - 4) * 2 / 3),
         top: 0,
+        zIndex: 5,
         borderRadius: "50%",
         border: "0px solid black",
         backgroundColor: theme.palette.primary.dark
@@ -77,24 +156,26 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
       id={nodeData.id + "_Ct"}
       type="target"
       position={Position.Right}
-      isValidConnection={validateConnection}
+      isValidConnection={validateSecondaryConnection}
       style={{
         width: 4,
         height: 4,
         right: -(4 / 2),
         top: 46 / 4,
+        zIndex: 5,
         backgroundColor: theme.palette.primary.dark,
       }} />
     <Handle
       id={nodeData.id + "_Ht"}
       type="target"
       position={Position.Right}
-      isValidConnection={validateConnection}
+      isValidConnection={validateSecondaryConnection}
       style={{
         width: 4,
         height: 4,
         right: -(4 / 2),
         top: 46 * 2 / 3,
+        zIndex: 5,
         backgroundColor: theme.palette.primary.dark,
       }}
     />
@@ -104,12 +185,13 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
       id={nodeData.id + "_Ct-1"}
       type="source"
       position={Position.Left}
-      isValidConnection={validateConnection}
+      isValidConnection={validateSecondaryConnection}
       style={{
         width: 4,
         height: 4,
         left: -(4 / 2),
         top: 46 / 4,
+        zIndex: 5,
         backgroundColor: theme.palette.primary.dark
       }}
     />
@@ -117,12 +199,13 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
       id={nodeData.id + "_Ht-1"}
       type="source"
       position={Position.Left}
-      isValidConnection={validateConnection}
+      isValidConnection={validateSecondaryConnection}
       style={{
         width: 4,
         height: 4,
         left: -(4 / 2),
         top: 46 * 2 / 3,
+        zIndex: 5,
         backgroundColor: theme.palette.primary.dark
       }}
     />
@@ -150,200 +233,164 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
           justifyContent: "center",
           borderLeft: color ? `4px solid ${color}` : undefined,
           '&:hover': { boxShadow: theme.shadows[6] },
+          position: "relative",
+          zIndex: 1,
         }}
       >
-        <Timer sx={{ fontSize: 22, color: color }} />
-      </Paper >
+        <Timer sx={{ fontSize: 22, color: color, position: "absolute" }} />
 
-      {/* Título e nome */}
-      <Box sx={{
-        width: "46px",
-        display: 'flex',
-        flexDirection: "column",
-      }}>
-        <Typography fontSize={8} fontWeight={"bold"} textAlign={"center"}>
-          LSTM
+        <div style={{
+          paddingRight: "2px",
+          paddingBottom: "2px",
+          flex: 1,
+          display: "flex",
+          flexDirection: "row",
+          width: "100%",
+          justifyContent: "end",
+          alignItems: "end"
+        }}>
+          <Tooltip title={(returnSequences ? "" : "Not ") + "Return Sequences"}>
+            <AddCircle onClick={handleChangeSequences} sx={{ fontSize: 9 }} color={returnSequences ? 'success' : 'error'} />
+          </Tooltip>
+        </div>
+
+        <Typography
+          fontSize={5}
+          fontWeight={"bold"}
+          textAlign={"center"}
+          sx={{
+            position: "absolute",
+            right: 2,
+            top: 8,
+          }}
+        >
+          Ct
         </Typography>
 
-        <Tooltip
-          sx={{ bgcolor: "#ffffffff" }}
-          title={
-            <Box>
-              <Typography
-                fontSize={12}
-                fontWeight="bold"
-                textAlign="center"
-              >
-                Unidades LSTM
-              </Typography>
-              <Box display="flex" alignItems="center" gap={0.5} p={0.5}>
-                <IconButton size="small" onClick={(ev) => {
-                  ev.preventDefault();
-                  ev.stopPropagation();
-
-                  handleChangeOutput(Math.max(1, shape[1][0] - 1));
-                }}>
-                  <Remove fontSize="inherit" />
-                </IconButton>
-
-                <TextField
-                  type="number"
-                  value={shape[1]}
-                  onChange={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-
-                    const value = Math.max(1, Number(e.target.value));
-                    handleChangeOutput(value);
-                  }}
-                  inputProps={{
-                    min: 1,
-                    style: {
-                      textAlign: 'center',
-                      fontSize: 12,
-                      width: 56,
-                      padding: 0,
-                    },
-                  }}
-                  variant="standard"
-                />
-
-                <IconButton size="small" onClick={(ev) => {
-                  ev.preventDefault();
-                  ev.stopPropagation();
-
-                  handleChangeOutput(shape[1][0] + 1);
-                }}>
-                  <Add fontSize="inherit" />
-                </IconButton>
-              </Box>
-            </Box>
-          }
-          arrow
-          placement="top"
+        <Typography
+          fontSize={5}
+          fontWeight={"bold"}
+          textAlign={"center"}
+          sx={{
+            position: "absolute",
+            right: 2,
+            top: 27,
+          }}
         >
-          <Typography
-            fontSize={6}
-            fontWeight="bold"
-            textAlign="center"
-            sx={{
-              cursor: "pointer",
-              userSelect: "none",
-              px: 0.5,
-              py: 0.2,
-              borderRadius: "4px",
-              "&:hover": {
-                backgroundColor: theme => theme.palette.action.hover,
-              },
-            }}
-          >
-            [{shape[1]}]
-          </Typography>
-        </Tooltip>
+          Ht
+        </Typography>
 
-      </Box>
+        <Typography
+          fontSize={5}
+          fontWeight={"bold"}
+          textAlign={"center"}
+          sx={{
+            position: "absolute",
+            left: 1,
+            top: 8,
+          }}
+        >
+          Ct-1
+        </Typography>
+
+        <Typography
+          fontSize={5}
+          fontWeight={"bold"}
+          textAlign={"center"}
+          sx={{
+            position: "absolute",
+            left: 1,
+            top: 27,
+          }}
+        >
+          Ht-1
+        </Typography>
+      </Paper >
+
+      <Typography
+        fontSize={8}
+        fontWeight={"bold"}
+        textAlign={"center"}
+      >
+        LSTM
+      </Typography>
+
+      {/* Título e nome */}
+      <Tooltip
+        sx={{ bgcolor: "#ffffffff" }}
+        title={
+          <Box>
+            <Typography
+              fontSize={12}
+              fontWeight="bold"
+              textAlign="center"
+            >
+              Unidades LSTM
+            </Typography>
+            <Box display="flex" alignItems="center" gap={0.5} p={0.5}>
+              <IconButton size="small" onClick={(ev) => handleChangeOutput(ev, Math.max(1, shape[1][shape[1].length - 1] - 1))}>
+                <Remove fontSize="inherit" />
+              </IconButton>
+
+              <TextField
+                type="number"
+                value={hiddenSize}
+                onChange={(e) => {
+                  const value = Math.max(1, Number(e.target.value));
+                  handleChangeOutput(e, value);
+                }}
+                inputProps={{
+                  min: 1,
+                  style: {
+                    textAlign: 'center',
+                    fontSize: 12,
+                    width: 56,
+                    padding: 0,
+                  },
+                }}
+                variant="standard"
+              />
+
+              <IconButton size="small" onClick={(ev) => handleChangeOutput(ev, shape[1][shape[1].length - 1] + 1)}>
+                <Add fontSize="inherit" />
+              </IconButton>
+            </Box>
+          </Box>
+        }
+        arrow
+        placement="top"
+      >
+        <Typography
+          fontSize={6}
+          fontWeight="bold"
+          textAlign="center"
+          sx={{
+            cursor: "pointer",
+            userSelect: "none",
+            px: 0.5,
+            py: 0.2,
+            borderRadius: "4px",
+            "&:hover": {
+              backgroundColor: theme => theme.palette.action.hover,
+            },
+          }}
+        >
+          {shapeText(shape as [[number, number, number], ([number, number] | [number, number, number])])}
+        </Typography>
+      </Tooltip>
 
     </Box >
   </>;
 };
 
-interface SVGLSTMProps {
-  width: number;
-  height: number;
+function shapeText(shape: [[number, number, number], ([number, number] | [number, number, number])]) {
+  let text = `[[${shape[0][1]}, ${shape[0][2]}], `;
+  if (shape[1].length == 2) {
+    text += `${shape[1][1]}]`;
+  } else {
+    text += `[${shape[1][1]}, ${shape[1][2]}]]`;
+  }
+
+  return text;
 }
-export const SVGLSTM: React.FC<SVGLSTMProps> = ({ height, width }) => {
-  return (
-    <>
-      {/* SVG LSTM */}
-      < svg
-        width="100%"
-        height="100%"
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="xMidYMid meet"
-      >
 
-        <defs>
-          <marker id="arrow" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto">
-            <path d="M0,0 L0,6 L9,3 z" fill="#000" />
-          </marker>
-        </defs>
-
-        {/* Caixa da célula LSTM */}
-        <rect x="0" y="0" width={width} height={height} rx="8" fill="#96a38900" strokeWidth="2" />
-
-        {/* Entradas */}
-        <text x={`${0.02 * width}`} y={`${0.47 * height}`} fontSize="12">xₜ</text>
-        <line x1={`${0.08 * width}`} y1={`${0.5 * height}`} x2={`${0.08 * width}`} y2={`${0.8 * height}`} stroke="black" strokeWidth={0.5} />
-        <line x1={`${0.08 * width}`} y1={`${0.5 * height}`} x2={`${0.0 * width}`} y2={`${0.5 * height}`} stroke="black" strokeWidth={0.5} />
-
-        <text x={`${0.02 * width}`} y={`${0.78 * height}`} fontSize="12">hₜ₋₁</text>
-        <line x1={`${0 * width}`} y1={`${0.8 * height}`} x2={`${0.15 * width}`} y2={`${0.8 * height}`} markerEnd="url(#arrow)" stroke="black" strokeWidth={0.5} />
-
-        <text x={`${0.02 * width}`} y={`${0.16 * height}`} fontSize="12">cₜ₋₁</text>
-
-        {/* Linha Superior, cruza de lado ao outro */}
-        <line x1={`${0 * width}`} y1={`${0.2 * height}`} x2={`${0.9 * width}`} y2={`${0.2 * height}`} stroke="black" markerEnd="url(#arrow)" strokeWidth={0.5} />
-        <line x1={`${(0.9 * width)}`} y1={`${(0.2 * height)}`} x2={`${(1 * width)}`} y2={`${(0.2 * height)}`} stroke="black" strokeWidth={0.5} />
-
-        {/* Linha inferior, vai até quase o fim */}
-        <line x1={`${0 * width}`} y1={`${0.8 * height}`} x2={`${(0.54 * width) + (0.12 * width) / 2}`} y2={`${0.8 * height}`} stroke="black" strokeWidth={0.5} />
-
-        {/* ft gate */}
-        <line x1={`${(0.12 * width) + (0.12 * width) / 2}`} y1={`${0.8 * height}`} x2={`${(0.12 * width) + (0.12 * width) / 2}`} y2={`${(0.21 * height) + (0.05 * height)}`} stroke="black" markerEnd="url(#arrow)" strokeWidth={0.5} />
-        <rect x={`${0.12 * width}`} y={`${0.55 * height}`} width={`${0.12 * width}`} height={`${0.15 * height}`} rx="5" fill="yellow" stroke="#888" />
-        <text x={`${(0.12 * width) + (0.12 * width) / 3}`} y={`${(0.55 * height) + (0.15 * height) / 1.5}`} fontSize="12" fontWeight="bold">σ</text>
-        <text x={`${(0.12 * width)}`} y={`${(0.52 * height)}`} fontSize="12">fₜ</text>
-
-        <circle cx={`${(0.12 * width) + (0.12 * width) / 2}`} cy={`${0.21 * height}`} r={`${0.05 * height}`} fill="pink" stroke="black" />
-        <text x={`${(0.11 * width) + (0.11 * width) / 2}`} y={`${0.21 * height}`} fontSize="10" fontWeight="bold" alignmentBaseline='central'>×</text>
-
-        {/* it gate */}
-        <line x1={`${(0.26 * width) + (0.12 * width) / 2}`} y1={`${0.38 * height}`} x2={`${(0.40 * width) + ((0.11 * width) / 2) - (0.05 * height)}`} y2={`${0.38 * height}`} stroke="black" markerEnd="url(#arrow)" strokeWidth={0.5} />
-        <line x1={`${(0.26 * width) + (0.12 * width) / 2}`} y1={`${0.8 * height}`} x2={`${(0.26 * width) + (0.12 * width) / 2}`} y2={`${0.38 * height}`} stroke="black" strokeWidth={0.5} />
-        <rect x={`${0.26 * width}`} y={`${0.55 * height}`} width={`${0.12 * width}`} height={`${0.15 * height}`} rx="5" fill="lightgreen" stroke="#888" />
-        <text x={`${(0.26 * width) + (0.12 * width) / 3}`} y={`${(0.55 * height) + (0.15 * height) / 1.5}`} fontSize="12" fontWeight="bold">σ</text>
-        <text x={`${(0.26 * width)}`} y={`${(0.52 * height)}`} fontSize="12">iₜ</text>
-
-        {/* ĉt - tanh */}
-        <line x1={`${(0.40 * width) + (0.12 * width) / 2}`} y1={`${0.8 * height}`} x2={`${(0.40 * width) + (0.12 * width) / 2}`} y2={`${(0.21 * height) + (0.05 * height)}`} stroke="black" markerEnd="url(#arrow)" strokeWidth={0.5} />
-        <rect x={`${0.40 * width}`} y={`${0.55 * height}`} width={`${0.12 * width}`} height={`${0.15 * height}`} rx="5" fill="gold" stroke="#888" />
-        <text x={`${(0.40 * width) + (0.12 * width) / 14}`} y={`${(0.55 * height) + (0.15 * height) / 1.5}`} fontSize="10" fontWeight="bold">tanh</text>
-        <text x={`${(0.40 * width)}`} y={`${(0.52 * height)}`} fontSize="12">ĉₜ</text>
-
-        <circle cx={`${(0.4 * width) + (0.12 * width) / 2}`} cy={`${0.38 * height}`} r={`${0.05 * height}`} fill="pink" stroke="black" />
-        <text x={`${(0.39 * width) + (0.11 * width) / 2}`} y={`${0.38 * height}`} fontSize="10" fontWeight="bold" alignmentBaseline='central'>×</text>
-
-        <circle cx={`${(0.4 * width) + (0.12 * width) / 2}`} cy={`${0.21 * height}`} r={`${0.05 * height}`} fill="#90caf9" stroke="black" />
-        <text x={`${(0.38 * width) + (0.13 * width) / 2}`} y={`${0.21 * height}`} fontSize="10" fontWeight="bold" alignmentBaseline='central'>+</text>
-
-        {/* ot gate */}
-        <line x1={`${(0.54 * width) + (0.12 * width) / 2}`} y1={`${0.46 * height}`} x2={`${(0.66 * width) + ((0.11 * width) / 2) - (0.05 * height)}`} y2={`${0.46 * height}`} stroke="black" markerEnd="url(#arrow)" strokeWidth={0.5} />
-        <line x1={`${(0.54 * width) + (0.12 * width) / 2}`} y1={`${0.8 * height}`} x2={`${(0.54 * width) + (0.12 * width) / 2}`} y2={`${0.46 * height}`} stroke="black" strokeWidth={0.5} />
-        <rect x={`${0.54 * width}`} y={`${0.55 * height}`} width={`${0.12 * width}`} height={`${0.15 * height}`} rx="5" fill="red" stroke="#888" />
-        <text x={`${(0.54 * width) + (0.12 * width) / 3}`} y={`${(0.55 * height) + (0.15 * height) / 1.5}`} fontSize="12" fontWeight="bold">σ</text>
-        <text x={`${(0.54 * width)}`} y={`${(0.52 * height)}`} fontSize="12">oₜ</text>
-
-        {/* Última linha */}
-        <line x1={`${(0.66 * width) + (0.11 * width) / 2}`} y1={`${0.8 * height}`} x2={`${(0.66 * width) + (0.11 * width) / 2}`} y2={`${(0.2 * height)}`} stroke="black" strokeWidth={0.5} />
-        <line x1={`${(0.66 * width) + (0.11 * width) / 2}`} y1={`${(0.8 * height)}`} x2={`${(0.9 * width)}`} y2={`${(0.8 * height)}`} stroke="black" markerEnd="url(#arrow)" strokeWidth={0.5} />
-        <line x1={`${(0.9 * width)}`} y1={`${(0.8 * height)}`} x2={`${(1 * width)}`} y2={`${(0.8 * height)}`} stroke="black" strokeWidth={0.5} />
-
-        <ellipse cx={`${(0.66 * width) + ((0.11 * width) / 2)}`} cy={`${0.3 * height}`} rx={`${0.05 * width}`} ry={`${0.05 * height}`} fill="violet" stroke="black" />
-        <text x={`${(0.62 * width) + ((0.11 * width) / 2)}`} y={`${0.32 * height}`} fontSize="7" fontWeight="bold">tanh</text>
-
-        <circle cx={`${(0.66 * width) + ((0.11 * width) / 2)}`} cy={`${0.46 * height}`} r={`${0.05 * height}`} fill="pink" stroke="black" />
-        <text x={`${(0.65 * width) + ((0.1 * width) / 2)}`} y={`${0.46 * height}`} fontSize="10" fontWeight="bold" alignmentBaseline='central'>×</text>
-
-        {/* Saída */}
-        <text x={`${0.94 * width}`} y={`${0.78 * height}`} fontSize="12">hₜ</text>
-        <text x={`${0.94 * width}`} y={`${0.17 * height}`} fontSize="12">cₜ</text>
-
-        <line x1={`${(0.85 * width)}`} y1={`${(0.5 * height)}`} x2={`${(0.9 * width)}`} y2={`${(0.5 * height)}`} stroke="black" markerEnd="url(#arrow)" strokeWidth={0.5} />
-        <line x1={`${(0.9 * width)}`} y1={`${(0.5 * height)}`} x2={`${(1 * width)}`} y2={`${(0.5 * height)}`} stroke="black" strokeWidth={0.5} />
-        <line x1={`${(0.85 * width)}`} y1={`${(0.8 * height)}`} x2={`${(0.85 * width)}`} y2={`${(0.5 * height)}`} stroke="black" strokeWidth={0.5} />
-
-        <text x={`${(0.94 * width)}`} y={`${(0.46 * height)}`} fontSize="12">yₜ</text>
-      </svg >
-    </>
-  );
-};
