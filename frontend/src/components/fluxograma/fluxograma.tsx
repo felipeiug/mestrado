@@ -13,16 +13,18 @@ import {
   OnNodesChange,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { LinearLayer } from './linear';
-import { generateRandomHash, LayerBase, LayerTypeName, LSTM } from '../../core';
+import { Conv1d, generateRandomHash, LayerBase, LayerTypeName, LSTM } from '../../core';
 import { Box, Menu, MenuItem, Typography } from '@mui/material';
 import { ContentCopy, Delete, Help, Settings } from '@mui/icons-material';
 import { FlowType, useAppThemeContext } from '../../context';
 import { LSTMLayer } from './lstm';
+import { Conv1DLayer } from './conv1d';
+import { LinearLayer } from './linear';
 
 const nodeTypes: any = {
   linearLayer: LinearLayer,
   lstmLayer: LSTMLayer,
+  conv1DLayer: Conv1DLayer,
 };
 
 export type FluxogramaProps = {
@@ -42,6 +44,20 @@ export const Fluxograma: React.FC<FluxogramaProps> = ({ initialFlow, onHelp, onP
   } | null>(null);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node<LayerBase>>([
+    {
+      id: generateRandomHash(8),
+      data: {
+        name: "Conv1d",
+        category: "",
+        kernelSize: 5,
+        outChannels: 16,
+        inShape: [3, 8, 2],
+        outShape: [3, 8, 64],
+        onChange: (node) => reactFlow.updateNodeData(node.id, node.data),
+      } as Conv1d,
+      position: { x: -300, y: -150 },
+      type: 'conv1DLayer',
+    },
     {
       id: generateRandomHash(8),
       data: {

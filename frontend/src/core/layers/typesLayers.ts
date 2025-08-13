@@ -35,6 +35,7 @@ export type Linear = LayerBase & {
 
 export type Conv1d = LayerBase & {
   name: 'Conv1d';
+  outChannels:num
   kernelSize: number;
   stride?: number;
   padding?: number;
