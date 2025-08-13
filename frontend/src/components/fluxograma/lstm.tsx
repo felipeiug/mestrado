@@ -14,18 +14,39 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
   const returnSequences = nodeData.data.returnSequences;
   const hiddenSize = nodeData.data.hiddenSize;
 
-  const validateConnection = (edge: EdgeBase | Connection) => {
+  const validateXTConnection = (edge: EdgeBase | Connection) => {
     if (edge.source === edge.target) return false;
 
+    const nodeTarget = getNode(edge.target) as Node<LayerBase>;
+    const nodeSource = getNode(edge.source) as Node<LSTM>;
+
+    const conn = getNodeConnections({
+      type: "source",
+      nodeId: nodeSource.id,
+    }).filter(conn => conn.sourceHandle === edge.sourceHandle);
+    if (conn.length) return false;
+
+    if (nodeTarget.data.outShape.length !== 3) return false;
+
+    nodeSource.data.inShape = nodeTarget.data.outShape as [number, number, number];
+
+    nodeSource.data.onChange?.(nodeSource);
+    nodeTarget.data.onChange?.(nodeTarget);
+
+    return true;
+  };
+
+  const validateYTConnection = (edge: EdgeBase | Connection) => {
+    if (edge.source === edge.target) return false;
+
+    const nodeTarget = getNode(edge.target) as Node<LSTM>;
     const nodeSource = getNode(edge.source) as Node<LayerBase>;
 
     const conn = getNodeConnections({
       type: "source",
       nodeId: nodeSource.id,
-    });
+    }).filter(conn => conn.sourceHandle === edge.sourceHandle);
     if (conn.length) return false;
-
-    const nodeTarget = getNode(edge.target) as Node<LSTM>;
 
     if (nodeTarget.data.returnSequences) {
       if (nodeSource.data.inShape.length !== 3) return false;
@@ -41,27 +62,54 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
     return true;
   };
 
-  const validateSecondaryConnection = (edge: EdgeBase | Connection) => {
+  const validateCTHTConnection = (edge: EdgeBase | Connection) => {
     if (edge.source === edge.target) return false;
 
-    const nodeSource = getNode(edge.source) as Node<LayerBase>;
-    const nodeTarget = getNode(edge.target) as Node<LayerBase>;
-
-    const valid = (nodeSource.data.inShape.length === 2) && (nodeSource.data.inShape.length === nodeTarget.data.outShape.length);
-    if (!valid) return false;
+    const nodeTarget = getNode(edge.target) as Node<LSTM>;
+    const nodeSource = getNode(edge.source) as Node<LayerBase | LSTM>;
 
     const conn = getNodeConnections({
       type: "source",
       nodeId: nodeSource.id,
-    });
+    }).filter(conn => conn.sourceHandle === edge.sourceHandle);
     if (conn.length) return false;
 
-    nodeSource.data.inShape = nodeTarget.data.outShape;
+    if (nodeSource.type !== "lstmLayer" && nodeSource.data.inShape.length !== 2) return false;
+    else if (nodeSource.type === "lstmLayer" && (nodeSource.data as LSTM).hiddenSize !== nodeTarget.data.hiddenSize) return false;
+
+    if (nodeSource.type !== "lstmLayer") {
+      nodeSource.data.inShape = [nodeTarget.data.inShape[0], nodeTarget.data.hiddenSize];
+    }
+
     nodeSource.data.onChange?.(nodeSource);
     nodeTarget.data.onChange?.(nodeTarget);
 
-    return valid;
+    return true;
   };
+
+  const validateCTHT_1Connection = (edge: EdgeBase | Connection) => {
+    if (edge.source === edge.target) return false;
+
+    const nodeTarget = getNode(edge.target) as Node<LSTM>;
+    const nodeSource = getNode(edge.source) as Node<LSTM>;
+
+    if (nodeTarget.type !== "lstmLayer") return false;
+
+    const conn = getNodeConnections({
+      type: "source",
+      nodeId: nodeSource.id,
+    }).filter(conn => conn.sourceHandle === edge.sourceHandle);
+    if (conn.length) return false;
+
+    const tOutLen = nodeTarget.data.outShape.length;
+    if (nodeTarget.data.outShape[tOutLen - 1] !== nodeSource.data.hiddenSize) return false;
+
+    nodeSource.data.onChange?.(nodeSource);
+    nodeTarget.data.onChange?.(nodeTarget);
+
+    return true;
+  };
+
 
   const handleChangeSequences = (ev: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
     ev.preventDefault();
@@ -75,10 +123,7 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
       nodeData.data.outShape = [nodeData.data.outShape[0], hiddenSize];
     }
 
-    const connections = getNodeConnections({
-      type: "target",
-      nodeId: nodeData.id,
-    });
+    const connections = getNodeConnections({ nodeId: nodeData.id });
 
     const edges = connections.map(conn => getEdge(conn.edgeId)).filter(ed => ed) as Edge[];
     deleteElements({ edges: edges });
@@ -86,7 +131,7 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
     nodeData.data.onChange?.(nodeData);
   };
 
-  const handleChangeOutput = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent> | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, hiddenSize: number) => {
+  const handleChangeUnits = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent> | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, hiddenSize: number) => {
     ev.preventDefault();
     ev.stopPropagation();
 
@@ -99,22 +144,10 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
     nodeData.data.hiddenSize = hiddenSize;
     nodeData.data.onChange?.(nodeData);
 
-    const connections = getNodeConnections({
-      type: "target",
-      nodeId: nodeData.id,
-    });
+    const connections = getNodeConnections({ nodeId: nodeData.id });
 
-    connections.forEach(conn => {
-      const node = getNode(conn.source) as (Node<LayerBase> | undefined);
-      if (node) {
-        if (returnSequences) {
-          node.data.inShape = [nodeData.data.outShape[0], nodeData.data.outShape[1], hiddenSize];
-        } else {
-          node.data.inShape = [nodeData.data.outShape[0], hiddenSize];
-        }
-        node.data.onChange?.(node);
-      }
-    });
+    const edges = connections.map(conn => getEdge(conn.edgeId)).filter(ed => ed) as Edge[];
+    deleteElements({ edges: edges });
   };
 
   return <>
@@ -122,7 +155,7 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
       id={nodeData.id + "_Xt"}
       type="source"
       position={Position.Top}
-      isValidConnection={validateConnection}
+      isValidConnection={validateXTConnection}
       style={{
         width: 4,
         height: 8,
@@ -138,7 +171,7 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
       id={nodeData.id + "_Yt"}
       type="target"
       position={Position.Top}
-      isValidConnection={validateConnection}
+      isValidConnection={validateYTConnection}
       style={{
         width: 8,
         height: 8,
@@ -156,7 +189,7 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
       id={nodeData.id + "_Ct"}
       type="target"
       position={Position.Right}
-      isValidConnection={validateSecondaryConnection}
+      isValidConnection={validateCTHTConnection}
       style={{
         width: 4,
         height: 4,
@@ -169,7 +202,7 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
       id={nodeData.id + "_Ht"}
       type="target"
       position={Position.Right}
-      isValidConnection={validateSecondaryConnection}
+      isValidConnection={validateCTHTConnection}
       style={{
         width: 4,
         height: 4,
@@ -185,7 +218,7 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
       id={nodeData.id + "_Ct-1"}
       type="source"
       position={Position.Left}
-      isValidConnection={validateSecondaryConnection}
+      isValidConnection={validateCTHT_1Connection}
       style={{
         width: 4,
         height: 4,
@@ -199,7 +232,7 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
       id={nodeData.id + "_Ht-1"}
       type="source"
       position={Position.Left}
-      isValidConnection={validateSecondaryConnection}
+      isValidConnection={validateCTHT_1Connection}
       style={{
         width: 4,
         height: 4,
@@ -328,7 +361,7 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
               Unidades LSTM
             </Typography>
             <Box display="flex" alignItems="center" gap={0.5} p={0.5}>
-              <IconButton size="small" onClick={(ev) => handleChangeOutput(ev, Math.max(1, shape[1][shape[1].length - 1] - 1))}>
+              <IconButton size="small" onClick={(ev) => handleChangeUnits(ev, Math.max(1, shape[1][shape[1].length - 1] - 1))}>
                 <Remove fontSize="inherit" />
               </IconButton>
 
@@ -337,7 +370,7 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
                 value={hiddenSize}
                 onChange={(e) => {
                   const value = Math.max(1, Number(e.target.value));
-                  handleChangeOutput(e, value);
+                  handleChangeUnits(e, value);
                 }}
                 inputProps={{
                   min: 1,
@@ -351,7 +384,7 @@ export function LSTMLayer(nodeData: Node<LSTM>) {
                 variant="standard"
               />
 
-              <IconButton size="small" onClick={(ev) => handleChangeOutput(ev, shape[1][shape[1].length - 1] + 1)}>
+              <IconButton size="small" onClick={(ev) => handleChangeUnits(ev, shape[1][shape[1].length - 1] + 1)}>
                 <Add fontSize="inherit" />
               </IconButton>
             </Box>
