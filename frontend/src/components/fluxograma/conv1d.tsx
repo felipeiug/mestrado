@@ -1,23 +1,48 @@
-import { Add, AddCircle, GraphicEq, Remove } from '@mui/icons-material';
-import { Box, IconButton, Paper, TextField, Tooltip, Typography, useTheme } from '@mui/material';
+import { BorderInner, BorderOuter, GraphicEq } from '@mui/icons-material';
+import { Box, Paper, Tooltip, Typography, useTheme } from '@mui/material';
 import { Connection, Handle, Node, useReactFlow } from '@xyflow/react';
 import { EdgeBase, Position } from '@xyflow/system';
-import { Linear } from '../../core';
+import { Conv1d, LayerBase } from '../../core';
+import { Conv1DConfig, getConv1DOutputShape } from '../convolution';
 
 
-export function Conv1DLayer(nodeData: Node<Linear>) {
+export function Conv1DLayer(nodeData: Node<Conv1d>) {
   const theme = useTheme();
   const color = "rgba(248, 126, 12, 1)";
   const { getNode, getNodeConnections } = useReactFlow();
 
-  let shape = [nodeData.data.inShape, nodeData.data.outShape];
-  const bias = nodeData.data.bias ?? true;
+  const data = nodeData.data;
+  let shape = [data.inShape, data.outShape];
+  const padding = data.padding;
 
-  const validateConnection = (edge: EdgeBase | Connection) => {
+  const validateTConnection = (edge: EdgeBase | Connection) => {
     if (edge.source === edge.target) return false;
 
-    const nodeSource = getNode(edge.source) as Node<Linear>;
-    const nodeTarget = getNode(edge.target) as Node<Linear>;
+    const nodeSource = getNode(edge.source) as Node<LayerBase>;
+    const nodeTarget = getNode(edge.target) as Node<Conv1d>;
+
+    const valid = (nodeSource.data.inShape.length === 3);
+    if (!valid) return false;
+
+    const conn = getNodeConnections({
+      type: "source",
+      nodeId: nodeSource.id,
+    });
+    if (conn.length) return false;
+
+
+    nodeSource.data.inShape = nodeTarget.data.outShape;
+    nodeSource.data.onChange?.(nodeSource);
+    nodeTarget.data.onChange?.(nodeTarget);
+
+    return valid;
+  };
+
+  const validateSConnection = (edge: EdgeBase | Connection) => {
+    if (edge.source === edge.target) return false;
+
+    const nodeSource = getNode(edge.source) as Node<Conv1d>;
+    const nodeTarget = getNode(edge.target) as Node<Conv1d>;
 
     const valid = (nodeSource.data.inShape.length === 2) && (nodeSource.data.inShape.length === nodeTarget.data.outShape.length);
     if (!valid) return false;
@@ -36,34 +61,26 @@ export function Conv1DLayer(nodeData: Node<Linear>) {
     return valid;
   };
 
-  const handleChangeBias = (ev: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
+  const handleChangePadding = (ev: React.MouseEvent<SVGSVGElement, MouseEvent>) => {
     ev.preventDefault();
     ev.stopPropagation();
 
-    nodeData.data.bias = !bias;
+    nodeData.data.padding = (padding === "same") ? "valid" : "same";
     nodeData.data.onChange?.(nodeData);
   };
 
-  const handleChangeOutput = (ev: React.MouseEvent<HTMLButtonElement, MouseEvent> | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, output: number) => {
-    ev.preventDefault();
-    ev.stopPropagation();
+  const handleChangeConv = (config: Conv1DConfig) => {
+    const outShape = getConv1DOutputShape(config);
 
-    const newShape: [[number, number], [number, number]] = [nodeData.data.inShape, [nodeData.data.outShape[0], output]];
-    nodeData.data.outShape = newShape[1];
-    nodeData.data.onChange?.(nodeData);
-
-    const connections = getNodeConnections({
-      type: "target",
-      nodeId: nodeData.id,
-    });
-
-    connections.forEach(conn => {
-      const node = getNode(conn.source) as (Node<Linear> | undefined);
-      if (node) {
-        node.data.inShape = [nodeData.data.outShape[0], output];
-        node.data.onChange?.(node);
-      }
-    });
+    nodeData.data = {
+      ...nodeData.data,
+      filters: config.filters,
+      kernelSize: config.kernelSize,
+      padding: config.padding,
+      stride: config.strides,
+      outShape: outShape,
+    };
+    data.onChange?.(nodeData);
   };
 
   return <>
@@ -71,7 +88,7 @@ export function Conv1DLayer(nodeData: Node<Linear>) {
       id={nodeData.id + "_T"}
       type="target"
       position={Position.Right}
-      isValidConnection={validateConnection}
+      isValidConnection={validateTConnection}
       style={{
         width: 8,
         height: 8,
@@ -87,7 +104,7 @@ export function Conv1DLayer(nodeData: Node<Linear>) {
       id={nodeData.id + "_S"}
       type="source"
       position={Position.Left}
-      isValidConnection={validateConnection}
+      isValidConnection={validateSConnection}
       style={{
         width: 4,
         height: 8,
@@ -99,8 +116,6 @@ export function Conv1DLayer(nodeData: Node<Linear>) {
         backgroundColor: theme.palette.primary.dark
       }}
     />
-
-
 
     {/* Conteúdo */}
     <Box
@@ -144,8 +159,12 @@ export function Conv1DLayer(nodeData: Node<Linear>) {
           justifyContent: "end",
           alignItems: "end"
         }}>
-          <Tooltip title={(bias ? "" : "Not ") + "Using Bias"}>
-            <AddCircle onClick={handleChangeBias} sx={{ fontSize: 9 }} color={bias ? 'success' : 'error'} />
+          <Tooltip title={padding === "same" ? "Padding Same" : "Padding Valid"}>
+            {
+              (padding === "same") ?
+                <BorderInner onClick={handleChangePadding} sx={{ fontSize: 9 }} /> :
+                <BorderOuter onClick={handleChangePadding} sx={{ fontSize: 9 }} />
+            }
           </Tooltip>
         </div>
 
@@ -166,34 +185,34 @@ export function Conv1DLayer(nodeData: Node<Linear>) {
         flexDirection: "column",
       }}>
         <Tooltip
+          slotProps={{
+            tooltip: {
+              sx: {
+                bgcolor: "#fff",
+                color: 'white',
+                border: "1px solid black",
+              }
+            },
+            popper: {
+              style: {
+                zIndex: 0,
+                backgroundColor: "#fff",
+              }
+            }
+          }}
           title={
             <Box display="flex" alignItems="center" gap={0.5} p={0.5}>
-              <IconButton size="small" onClick={(ev) => handleChangeOutput(ev, Math.max(1, shape[1][1] - 1))}>
-                <Remove fontSize="inherit" />
-              </IconButton>
+              <Conv1DConfig
+                initialConfig={{
+                  filters: data.filters,
+                  padding: data.padding,
+                  inputshape: data.inShape,
+                  strides: data.stride ?? 1,
+                  kernelSize: data.kernelSize,
 
-              <TextField
-                type="number"
-                value={shape[1][1]}
-                onChange={(e) => {
-                  const value = Math.max(1, Number(e.target.value));
-                  handleChangeOutput(e, value);
                 }}
-                inputProps={{
-                  min: 1,
-                  style: {
-                    textAlign: 'center',
-                    fontSize: 12,
-                    width: 56,
-                    padding: 0,
-                  },
-                }}
-                variant="standard"
+                onChange={handleChangeConv}
               />
-
-              <IconButton size="small" onClick={(ev) => handleChangeOutput(ev, shape[1][1] + 1)}>
-                <Add fontSize="inherit" />
-              </IconButton>
             </Box>
           }
           arrow

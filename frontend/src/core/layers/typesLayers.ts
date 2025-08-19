@@ -35,10 +35,12 @@ export type Linear = LayerBase & {
 
 export type Conv1d = LayerBase & {
   name: 'Conv1d';
-  outChannels:num
+  filters: number;
   kernelSize: number;
   stride?: number;
-  padding?: number;
+  inShape: [number, number, number];
+  outShape: [number, number, number];
+  padding: "valid" | "same";
 }
 
 export type Conv2d = LayerBase & {
