@@ -1,3 +1,10 @@
+.xlsx
+*.db
+*/libs/
+*/Dados/
+*.pth
+save_state/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
