@@ -5,6 +5,7 @@
 *.pth
 save_state/
 HYDRUS/
+pydrus/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

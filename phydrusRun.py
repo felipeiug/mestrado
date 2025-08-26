@@ -1,55 +1,51 @@
+"""
+Example script of how to setup a basic HYDRUS-1D model using Pydrus.
+
+Author: R.A. Collenteur, University of Graz, 2019
+
+"""
+
 import os
-import phydrus as ps
+import pydrus as ps
+import pandas as pd
 
-# Folder for Hydrus files to be stored
-ws = "example_1" # Directory
-exe = r"C:\Program Files (x86)\PC-Progress\Hydrus-1D 4.xx\HYDRUS1D.EXE"
+ws = r"D:\Mestrado\Trabalho Final\Codigos\example3"
+exe = "pydrus\source\hydrus" # os.path.join(os.getcwd(), "hydrus")
 
-# Description
-desc = "Infiltration of Water into a Single-Layered Soil Profile"
+# Create the basic model
+desc = "Root uptake with meteorological data"
 
-# Create model
-ml = ps.Model(
-    exe_name=exe,
-    ws_name=ws,
-    name="model",
-    description=desc,
-    mass_units="mmol",
-    time_unit="days",
-    length_unit="cm",
-    print_screen=True,
-)
+ml = ps.Model(exe_name=exe, ws_name=ws, name="model", description=desc,
+              mass_units="mmol", time_unit="days", length_unit="cm")
 
-ml.basic_info["lFlux"] = True
-ml.basic_info["lShort"] = False
+# Time info
+ml.time_information["tInit"] = 0
+ml.time_information["tMax"] = 213
 
-ml.add_time_info(tmax=1, print_times=True, nsteps=12, dt=0.001)
-
-ml.add_waterflow(top_bc=0, bot_bc=4)
-
-m = ml.get_empty_material_df(n=1)
-m.loc[[1]] = [[0.078, 0.43, 0.036, 1.56, 24.96, 0.5]]
+# Add materials
+m = pd.DataFrame(columns=["thr", "ths", "Alfa", "n", "Ks", "l"], index=[1],
+                 data=[[0.095, 0.41, 0.019, 1.31, 3.4, 0.5]])
 ml.add_material(m)
 
-elements = 100  # Disctretize soil column into n elements
-depth = -100  # Depth of the soil column
-ihead = -100  # Determine initial Pressure Head
-# Create Profile
-profile = ps.create_profile(bot=depth, dx=abs(depth / elements), h=ihead)
-profile.iloc[0, 1] = 1  # Define initial Pressure Head at the surface
-ml.add_profile(profile)  # Add the profile
+# Profile
+profile = ps.create_profile(bot=-100, dx=10, h=-70.5614)
+ml.add_profile(profile)
 
-# Add observation nodes at depth
-ml.add_obs_nodes([-20, -40, -60, -80, -100])
+# Water flow info
+ml.add_waterflow(maxit=20, tolh=1, linitw=False, kodbot=-1,
+                 seepage_face=True, hseep=-60)
+#ml.add_waterflow(kodbot=-1, linitw=False, free_drainage=True, ha=1e-6, hb=1e4)
 
-ml.write_input()
-res = ml.simulate()
-print(res)
+# Atmospheric data
+atm = pd.read_csv("pydrus/examples/data/ex3.csv", index_col=0)
+atm = atm.drop(labels="RootDepth", axis=1)
+ml.add_atmosphere(atm)
 
-# ml.plots.obs_points()
-# ml.plots.profile_information()
-# ml.plots.profile_information("Water Content")
-# ml.plots.water_flow(data="Actual Surface Flux")
-# ml.plots.water_flow(data="Bottom Flux")
-# ml.plots.soil_properties()
+# Root uptake
+ml.add_rootwater_uptake(model=0, poptm=[-25])
 
+ml.write_files()
+ml.simulate()
+
+df = ml.read_tlevel()
+df['vBot'].plot()
