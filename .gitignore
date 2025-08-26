@@ -4,6 +4,7 @@
 */Dados/
 *.pth
 save_state/
+HYDRUS/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
