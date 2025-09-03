@@ -362,7 +362,7 @@ class Infiltrometro:
 
         # Infiltração
         values = self.K()
-        values = values["K (C1)"]
+        values = values["K"]
 
         maximo = np.ceil(np.ceil(values.max()*100)/5)*5/100
         percents = values/maximo
