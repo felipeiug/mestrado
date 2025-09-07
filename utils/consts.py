@@ -62,3 +62,20 @@ COLUMNS_INFILTRATION = [
     "04_30", "05_00", "05_30", "06_00", "06_30", "07_00", "07_30", "08_00", "08_30", "09_00",
     "09_30", "10_00", "Clay", "Sand", "Silt", "Suction"
 ]
+
+SOIL_TYPES = [
+    None,
+    "clay",
+    "silty clay",
+    "silty clay loam",
+    "sandy clay",
+    "sandy clay loam",
+    "clay loam",
+    "silt",
+    "silt loam",
+    "loam",
+    "sand",
+    "loamy sand",
+    "sandy loam",
+    "silt loam",
+]
