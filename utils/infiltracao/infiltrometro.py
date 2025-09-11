@@ -4,6 +4,7 @@ import geopandas as gpd
 
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
+import matplotlib.patheffects as path_effects
     
 from scipy.optimize import curve_fit
 from matplotlib.cm import ScalarMappable
@@ -219,10 +220,10 @@ class Infiltrometro:
     def K(self, point:str|None = None):
         """Retorna o dataframe com a condutividade hidráulica do solo, contém os pontos com cálculo"""
 
-        #TODO: Verificar qual utilizar, C2 ou C1
         mask, df = self.A2(point)
         A = np.where(df["A2_Dohnal"].values!=None, df["A2_Dohnal"], df["A2_Zhang"])
-        df["K"] = self.infiltrations[mask]["C2"]/A
+        df["K"] = self.infiltrations[mask]["C2"]/A # TODO: Verificar C2 ou C1
+        df["K"] = np.where(df["K"]<0, np.nan, df["K"])
 
         return df
     
@@ -233,7 +234,7 @@ class Infiltrometro:
         if df is None:
             return None
         
-        df["S"] = self.infiltrations[mask]["C1"]/df["A1"]
+        df["S"] = self.infiltrations[mask]["C2"]/df["A1"]
 
         return df
 
@@ -358,7 +359,7 @@ class Infiltrometro:
 
         return GenerateRaster(resolution=resolution, bbox=bbox, crs=crs)
 
-    def plot_soil_texture(self, fig:plt.Figure, ax:plt.Axes):
+    def plot_soil_texture(self, fig:plt.Figure, ax:plt.Axes, rotulos=False):
 
         # Infiltração
         values = self.K()
@@ -384,10 +385,28 @@ class Infiltrometro:
             border_colors=border_color,
         )
 
+        # Rótulos dos dados
+        if rotulos:
+            for sand, silt, clay, label in zip(
+                self.infiltrations['Sand'],
+                self.infiltrations['Silt'],
+                self.infiltrations['Clay'],
+                self.infiltrations['Ponto']
+            ):
+                ax.text(clay, silt, sand, str(label), fontsize=8,
+                    ha='center',
+                    va='center',
+                    color='white',
+                    path_effects=[
+                        path_effects.Stroke(linewidth=1.5, foreground='black'),
+                        path_effects.Normal()
+                    ]
+                )
+
         # Exibir o gradiente
         cmap = mcolors.LinearSegmentedColormap.from_list('meu_gradiente', [np.array([1, 0.7843, 0.3569]), np.array([0.4706, 0.3137, 0])])
-        cax = fig.add_axes([0.1, 0.1, 0.01, 0.8]) # Posição e tamanho [left, bottom, width, height]
-        norm = plt.Normalize(vmin=0, vmax=maximo)  # Define os valores mínimo e máximo
+        cax = fig.add_axes([0.95, 0.1, 0.01, 0.8]) # Posição e tamanho [left, bottom, width, height]
+        norm = plt.Normalize(vmin=0, vmax=maximo) # Define os valores mínimo e máximo
         sm = ScalarMappable(cmap=cmap, norm=norm)
         sm.set_array([])
 

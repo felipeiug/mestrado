@@ -3,4 +3,5 @@ gpd.options.io_engine = "pyogrio"
 
 from .infiltracao import *
 from .consts import *
-from .generate_random import generate_random_hash
+from .generate_random import generate_random_hash, generate_random_color
+from .PTFs import *

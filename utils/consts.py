@@ -55,6 +55,14 @@ USO_SOLO_CLASS = {
         "name":"13",
         "cor": "#b7b7b7",
     },
+    14: {
+        "name":"14",
+        "cor": "#D3D3D3",
+    },
+    15: {
+        "name":"No Data",
+        "cor": "#f7f7f7",
+    },
 }
 
 COLUMNS_INFILTRATION = [
@@ -77,5 +85,5 @@ SOIL_TYPES = [
     "sand",
     "loamy sand",
     "sandy loam",
-    "silt loam",
+    "silt loam 2",
 ]
