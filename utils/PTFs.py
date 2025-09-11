@@ -83,6 +83,7 @@ def Saxton(sand, silt, clay):
     --------------------------------------
     """
 
+    print("A função proposta por Saxton não funciona corretamente")
 
     t1 = 12.01 - (0.0755*sand)
     t2 = (-3.8950 + (0.03671*sand) - (0.1103*clay) + 8.7546 * (10**(-4))*np.pow(clay, 2))

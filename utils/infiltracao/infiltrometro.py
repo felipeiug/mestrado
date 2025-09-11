@@ -5,8 +5,9 @@ import geopandas as gpd
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.patheffects as path_effects
-    
+
 from scipy.optimize import curve_fit
+from rosetta import rosetta, SoilData
 from matplotlib.cm import ScalarMappable
 
 from ..consts import *
@@ -124,7 +125,7 @@ class Infiltrometro:
         columns_time = COLUMNS_INFILTRATION[4:25]
 
         times = np.array([int(i.split("_")[0])*60 + int(i.split("_")[1]) for i in columns_time])
-        self.infiltrations["Taxa Inf"] = 0
+        self.infiltrations["Taxa Inf"] = 0.0
 
         for ponto in self.infiltrations.itertuples():
             index = ponto.Index
@@ -147,7 +148,7 @@ class Infiltrometro:
             tempo = times[mask][-1]- times[mask][0]
 
             # Taxa de infiltração em mL/s
-            self.infiltrations.at[index, "Taxa Inf"] = infiltrado/tempo
+            self.infiltrations.at[index, "Taxa Inf"] = (infiltrado/tempo)
 
     def _aproximate_C1_C2(self, t:np.ndarray, I:np.ndarray):
         """Retorna uma tupla com os valores de C1, C2 e a covariancia entre eles."""
@@ -217,13 +218,18 @@ class Infiltrometro:
 
         return pd.DataFrame({"Ponto": self.infiltrations["Ponto"], "Vol": (vol_init - vol_fim)})
 
-    def K(self, point:str|None = None):
+    def K(self, point:str|None = None, return_mask=False):
         """Retorna o dataframe com a condutividade hidráulica do solo, contém os pontos com cálculo"""
 
         mask, df = self.A2(point)
         A = np.where(df["A2_Dohnal"].values!=None, df["A2_Dohnal"], df["A2_Zhang"])
-        df["K"] = self.infiltrations[mask]["C2"]/A # TODO: Verificar C2 ou C1
+        column = "C1"
+        print(f"Cálculos utilizando {column}")
+        df["K"] = self.infiltrations[mask][column]/A
         df["K"] = np.where(df["K"]<0, np.nan, df["K"])
+
+        if return_mask:
+            return mask, df
 
         return df
     
@@ -238,6 +244,62 @@ class Infiltrometro:
 
         return df
 
+    def Ks(self, point:str|None = None):
+        """Retorna o dataframe com a condutividade hidráulica do solo, contém os pontos com cálculo"""
+
+        mask, K = self.K(point, return_mask=True)
+
+        sand = self.infiltrations[mask]["Sand"].values
+        silt = self.infiltrations[mask]["Silt"].values
+        clay = self.infiltrations[mask]["Clay"].values
+        
+        # Obtendo Teta_s
+        sand = np.atleast_1d(sand) # type: ignore
+        silt = np.atleast_1d(silt) # type: ignore
+        clay = np.atleast_1d(clay) # type: ignore
+
+        if not (sand.shape == silt.shape == clay.shape):
+            raise ValueError("sand, silt e clay devem ter o mesmo tamanho.")
+        
+        data = np.stack([sand, silt, clay], axis=1)
+
+        mean, _, _ = rosetta(3, SoilData.from_array(data))
+        teta_r = mean[:, 0]
+        teta_s = mean[:, 1]
+
+        n = K["n"]
+        alfa = K["alfa"]
+        m = 1 - (1/n)
+
+        teta = self.Teta_h(-2, teta_s, teta_r, n, alfa)
+
+        Se = (teta - teta_r)/(teta_s-teta_r)
+
+        l = 0.5 # Tortuosidade, valor recomendado por Mualen
+
+        t1 = np.pow(np.pow(1 - np.pow(Se, (1/m)), m), 2)
+        Kr = np.pow(Se, l) * t1
+
+        Ks = (K["K"].values)/Kr
+
+        return pd.DataFrame({
+            "Ks": Ks,
+            "K": K["K"].values,
+            "Kr": Kr,
+            "θr": teta_r,
+            "θs": teta_s,
+            "n": n,
+            "alfa": alfa,
+            "Se": Se,
+            "l": 0.5,
+        })
+    
+    def Teta_h(self, h, teta_s, teta_r, n, alfa):
+        m = 1 - (1/n)
+        den = np.pow(1 + np.pow((alfa*np.abs(h)), n), m)
+
+        return teta_r + ((teta_s-teta_r)/den)
+    
     def A1(self, point:str|None = None):
         "Retorna uma tupla com a mascara e o dataframe com o cálculo de A1 para o valor da infiltração"
 
