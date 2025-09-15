@@ -5,3 +5,4 @@ from .infiltracao import *
 from .consts import *
 from .generate_random import generate_random_hash, generate_random_color
 from .PTFs import *
+from .nse_error import nse

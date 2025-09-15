@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from utils import Infiltrometro, ALL_FUNCTIONS, generate_random_color
+from utils import Infiltrometro, ALL_FUNCTIONS
 
 infil = pd.read_excel(r"D:\Mestrado\Trabalho Final\Dados\Levantamento em Campo\Compiled.xlsx", sheet_name="Infiltracao")
 infil = Infiltrometro(infil)
@@ -20,10 +20,10 @@ silt = infil.infiltrations["Silt"].values
 clay = infil.infiltrations["Clay"].values
 
 KSS:dict[str, np.ndarray] = {
-    "Ks": -np.log10(Ks.astype(np.float32)), #type:ignore
+    "Ks": np.log10(Ks.astype(np.float32)), #type:ignore
 }
 for key, value in ALL_FUNCTIONS.items():
-    KSS[key] = -np.log10(value(sand, silt, clay))
+    KSS[key] = np.log10(value(sand, silt, clay))
 
 # Largura de cada barra
 width = 0.1
@@ -55,6 +55,9 @@ ax2.grid(axis='y', linestyle='--', alpha=0.6)
 
 ax1.set_xticks(x1)
 ax2.set_xticks(x2)
+
+ax1.invert_yaxis()
+ax2.invert_yaxis()
 
 # ax1.set_ylim(top=0.003)
 # ax2.set_ylim(top=0.003)
