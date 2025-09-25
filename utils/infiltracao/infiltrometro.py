@@ -218,13 +218,16 @@ class Infiltrometro:
 
         return pd.DataFrame({"Ponto": self.infiltrations["Ponto"], "Vol": (vol_init - vol_fim)})
 
-    def K(self, point:str|None = None, return_mask=False):
+    def K(self, point:str|None = None, return_mask=False, is_print=True):
         """Retorna o dataframe com a condutividade hidráulica do solo, contém os pontos com cálculo"""
 
         mask, df = self.A2(point)
         A = np.where(df["A2_Dohnal"].values!=None, df["A2_Dohnal"], df["A2_Zhang"])
         column = "C1"
-        print(f"Cálculos utilizando {column}")
+
+        if is_print:
+            print(f"Cálculos utilizando {column}")
+
         df["K"] = self.infiltrations[mask][column]/A
         df["K"] = np.where(df["K"]<0, np.nan, df["K"])
 
@@ -244,10 +247,10 @@ class Infiltrometro:
 
         return df
 
-    def Ks(self, point:str|None = None):
+    def Ks(self, point:str|None = None, is_print=True):
         """Retorna o dataframe com a condutividade hidráulica do solo, contém os pontos com cálculo"""
 
-        mask, K = self.K(point, return_mask=True)
+        mask, K = self.K(point, return_mask=True, is_print=is_print)
 
         sand = self.infiltrations[mask]["Sand"].values
         silt = self.infiltrations[mask]["Silt"].values
@@ -280,9 +283,10 @@ class Infiltrometro:
         t1 = np.pow(np.pow(1 - np.pow(Se, (1/m)), m), 2)
         Kr = np.pow(Se, l) * t1
 
-        Ks = (K["K"].values)/Kr
+        Ks = ((K["K"].values)/Kr).astype(np.float64)
 
         return pd.DataFrame({
+            "Ponto": K["Ponto"],
             "Ks": Ks,
             "K": K["K"].values,
             "Kr": Kr,
