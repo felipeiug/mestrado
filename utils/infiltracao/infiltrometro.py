@@ -223,7 +223,7 @@ class Infiltrometro:
 
         mask, df = self.A2(point)
         A = np.where(df["A2_Dohnal"].values!=None, df["A2_Dohnal"], df["A2_Zhang"])
-        column = "C1"
+        column = "C1" # No e-mail indicaram utilizar C1/A
 
         if is_print:
             print(f"Cálculos utilizando {column}")
