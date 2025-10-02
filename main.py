@@ -69,9 +69,9 @@ ax1.legend()
 
 
 # Plot Soil Textures
-# fig2 = plt.figure(figsize=(14, 6))
-# ax2 = fig2.add_subplot(projection='ternary') # 2 linhas, 1 colunas, posição 2
-# infil.plot_soil_texture(fig2, ax2, rotulos=True)
+fig2 = plt.figure(figsize=(14, 6))
+ax2 = fig2.add_subplot(projection='ternary') # 2 linhas, 1 colunas, posição 2
+infil.plot_soil_texture(fig2, ax2, rotulos=True)
 
 plt.tight_layout()
 plt.show()
