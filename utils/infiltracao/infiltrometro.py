@@ -425,7 +425,7 @@ class Infiltrometro:
 
         return GenerateRaster(resolution=resolution, bbox=bbox, crs=crs)
 
-    def plot_soil_texture(self, fig:plt.Figure, ax:plt.Axes, rotulos=False):
+    def plot_soil_texture(self, fig:plt.Figure, ax:plt.Axes, rotulos=False, label_column=None):
 
         # Infiltração
         values = self.K()
@@ -457,9 +457,9 @@ class Infiltrometro:
                 self.infiltrations['Sand'],
                 self.infiltrations['Silt'],
                 self.infiltrations['Clay'],
-                self.infiltrations['Ponto']
+                self.infiltrations[label_column or 'Ponto']
             ):
-                ax.text(clay, silt, sand, str(label), fontsize=8,
+                ax.text(clay, silt, sand, str(label), fontsize=12,
                     ha='center',
                     va='center',
                     color='white',

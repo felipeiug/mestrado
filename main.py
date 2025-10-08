@@ -1,11 +1,18 @@
 import numpy as np
 import pandas as pd
+import geopandas as gpd
 import matplotlib.pyplot as plt
+from shapely.geometry import Point
 
-from utils import Infiltrometro, ALL_FUNCTIONS
+from utils import Infiltrometro, ALL_FUNCTIONS, points_distance
 
 infil = pd.read_excel(r"D:\Mestrado\Trabalho Final\Dados\Levantamento em Campo\Compiled.xlsx", sheet_name="Infiltracao")
+infil = gpd.GeoDataFrame(infil, geometry=gpd.points_from_xy(infil["Lat"], infil["Lon"]), crs = "EPSG:4326")
 infil = Infiltrometro(infil)
+
+# Distancia média entre pontos
+infil.infiltrations["dist_position"] = points_distance(infil.infiltrations, initial_point=infil.infiltrations[infil.infiltrations["Ponto"] == "P21"].index.values[0])
+infil.infiltrations.to_file("dados.gpkg", driver="GPKG", layer="Pontos")
 
 # K  = infil.K()  # Este valor de K é o K para -2cm de poropressão.
 Ks = infil.Ks() # Ks é a condutividade Hidráulica Saturada.
@@ -67,11 +74,12 @@ ax2.set_xticklabels(infil.infiltrations.loc[(x1[-1]+x2+1), "Ponto"], rotation=90
 
 ax1.legend()
 
-
 # Plot Soil Textures
-fig2 = plt.figure(figsize=(14, 6))
+fig2 = plt.figure(figsize=(28, 12))
 ax2 = fig2.add_subplot(projection='ternary') # 2 linhas, 1 colunas, posição 2
 infil.plot_soil_texture(fig2, ax2, rotulos=True)
 
 plt.tight_layout()
+
+fig2.savefig("ClassificaçãoTexturas.png", dpi=450)
 plt.show()
