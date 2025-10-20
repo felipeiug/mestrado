@@ -6,6 +6,7 @@
 save_state/
 HYDRUS/
 pydrus/
+simulacoes/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
