@@ -1,0 +1,1 @@
+Dados utilizando no máximo 50.000 combinações aleatórias, porém utilizando um ponto de cada Solo do IDE Sisema
