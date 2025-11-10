@@ -1,5 +1,6 @@
 import numpy as np
 
+from tqdm import tqdm
 from soiltexture import getTextures, getTexture
 from collections.abc import Iterable
 
@@ -35,6 +36,6 @@ def calculate_soil_type(sand:list[float|int]|np.ndarray|float|int, clay:list[flo
 
     if not is_list:
         return textures[0].title()
-    return np.array([(i.title() if i is not None else None) for i in textures])
+    return np.array([(i.title() if i is not None else None) for i in tqdm(textures, "Processando Texturas", len(textures))])
 
     
