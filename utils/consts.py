@@ -9,47 +9,47 @@ USO_SOLO_CLASS = {
     1: {
         "name":"Canga",
         "cor": "#becd47",
-        "infiltration_index":0.05,
+        "infiltration_index":2,
     },
     2: {
         "name":"Vegetação Rasteira",
         "cor": "#9bec9c",
-        "infiltration_index":0.6,
+        "infiltration_index":5,
     },
     3: {
         "name":"Industrial",
         "cor": "#8c1727",
-        "infiltration_index":0.01,
+        "infiltration_index":1,
     },
     4: {
         "name":"Residencial",
         "cor": "#d35625",
-        "infiltration_index":0.01,
+        "infiltration_index":1,
     },
     5: {
         "name":"Vegetação Densa",
         "cor": "#236628",
-        "infiltration_index":1,
+        "infiltration_index":7,
     },
     6: {
         "name":"Solo Exposto",
         "cor": "#fff500",
-        "infiltration_index":0.1,
+        "infiltration_index":3,
     },
     7: {
         "name":"Água",
         "cor": "#1a98ff",
-        "infiltration_index":0,
+        "infiltration_index":8,
     },
     8: {
         "name":"Pousio",
         "cor": "#ec8de7",
-        "infiltration_index":0.8,
+        "infiltration_index":6,
     },
     9: {
         "name":"Agricultura",
         "cor": "#d009cd",
-        "infiltration_index":0.5,
+        "infiltration_index":4,
     },
     10: {
         "name":"10",
@@ -97,54 +97,54 @@ SOIL_TYPES = {
     },
     1: {
         "name": "clay",
-        "infiltration_index": 0.1,
+        "infiltration_index": 1,
     },
     2: {
         "name": "silty clay",
-        "infiltration_index": 0.2,
+        "infiltration_index": 2,
     },
     3: {
         "name": "silty clay loam",
-        "infiltration_index": 0.3,
+        "infiltration_index": 3,
     },
     4: {
         "name": "sandy clay",
-        "infiltration_index": 0.4,
+        "infiltration_index": 4,
     },
     5: {
         "name": "sandy clay loam",
-        "infiltration_index": 0.5,
+        "infiltration_index": 5,
     },
     6: {
         "name": "clay loam",
-        "infiltration_index": 0.55,
+        "infiltration_index": 5,
     },
     7: {
         "name": "silt",
-        "infiltration_index": 0.45,
+        "infiltration_index": 4,
     },
     8: {
         "name": "silt loam",
-        "infiltration_index": 0.6,
+        "infiltration_index": 6,
     },
     9: {
         "name": "loam",
-        "infiltration_index": 0.7,
+        "infiltration_index": 7,
     },
     10: {
         "name": "sand",
-        "infiltration_index": 1,
+        "infiltration_index": 9,
     },
     11: {
         "name": "loamy sand",
-        "infiltration_index": 0.85,
+        "infiltration_index": 8,
     },
     12: {
         "name": "sandy loam",
-        "infiltration_index": 0.75,
+        "infiltration_index": 7,
     },
     13: {
         "name": "silt loam 2",
-        "infiltration_index": 0.6,
+        "infiltration_index": 6,
     },
 }
