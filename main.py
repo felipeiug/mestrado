@@ -11,8 +11,8 @@ infil = gpd.GeoDataFrame(infil, geometry=gpd.points_from_xy(infil["Lat"], infil[
 infil = Infiltrometro(infil)
 
 # Distancia média entre pontos
-infil.infiltrations["dist_position"] = points_distance(infil.infiltrations, initial_point=infil.infiltrations[infil.infiltrations["Ponto"] == "P21"].index.values[0])
-infil.infiltrations.to_file("dados.gpkg", driver="GPKG", layer="Pontos")
+# infil.infiltrations["dist_position"] = points_distance(infil.infiltrations, initial_point=infil.infiltrations[infil.infiltrations["Ponto"] == "P21"].index.values[0])
+# infil.infiltrations.to_file("dados.gpkg", driver="GPKG", layer="Pontos")
 
 # K  = infil.K()  # Este valor de K é o K para -2cm de poropressão.
 Ks = infil.Ks() # Ks é a condutividade Hidráulica Saturada.

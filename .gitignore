@@ -3,6 +3,9 @@
 */libs/
 */Dados/
 *.pth
+*.tif
+*.tiff
+
 save_state/
 HYDRUS/
 pydrus/
