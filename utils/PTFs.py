@@ -83,7 +83,7 @@ def Saxton(sand, silt, clay):
     --------------------------------------
     """
 
-    print("A função proposta por Saxton não funciona corretamente")
+    # print("A função proposta por Saxton não funciona corretamente")
 
     t1 = 12.01 - (0.0755*sand)
     t2 = (-3.8950 + (0.03671*sand) - (0.1103*clay) + 8.7546 * (10**(-4))*np.pow(clay, 2))
@@ -107,6 +107,15 @@ def Saxton(sand, silt, clay):
     
     return Ks
 
+def My_Linear(sand, silt, clay):
+    """ --------------------------------------
+     Função Linear Definida Neste Trabalho
+     Entrada: %areia, %silte, %argila
+    --------------------------------------"""
+    log10_Ks = 0.0220 * sand + 0.0112 * silt - 0.0332 * clay
+    Ks = np.pow(10, log10_Ks)   # cm/s
+    return Ks
+
 ALL_FUNCTIONS = {
     "WMssc": WMssc,
     "COSBY": COSBY,
@@ -115,4 +124,5 @@ ALL_FUNCTIONS = {
     "Puckett": Puckett,
     "DanePuckett": DanePuckett,
     "Saxton":Saxton,
+    "My_Linear": My_Linear,
 }
