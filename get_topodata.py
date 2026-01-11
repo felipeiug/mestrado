@@ -1,3 +1,4 @@
+import zipfile
 import os, tempfile
 import rioxarray as rxr
 from tqdm import tqdm
@@ -13,13 +14,28 @@ os.environ["TMP"]          = "D:/APAGAR"
 
 tempfile.tempdir = "D:/APAGAR"
 
-rasters = os.listdir("rasters")
+raster_dir = "rasters_declividade"
 
-rasters_readed = []
+
+for file in os.listdir(raster_dir):
+    if file.lower().endswith(".zip"):
+        zip_path = os.path.join(raster_dir, file)
+
+        with zipfile.ZipFile(zip_path, "r") as z:
+            for name in z.namelist():
+                out_path = os.path.join(raster_dir, name)
+                if not os.path.exists(out_path):
+                    z.extract(name, raster_dir)
 
 # === carregue TUDO em RAM ===
+rasters = sorted(
+    f for f in os.listdir(raster_dir)
+    if f.lower().endswith(".tif")
+)
+
+rasters_readed = []
 for raster in tqdm(rasters, desc="Lendo rasters"):
-    rst = rxr.open_rasterio(f"rasters/{raster}", masked=True).load()
+    rst = rxr.open_rasterio(f"rasters_declividade/{raster}", masked=True).load()
     rst = rst.rio.write_crs("EPSG:4326")
     rasters_readed.append(rst)
 

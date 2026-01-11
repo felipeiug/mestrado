@@ -5,6 +5,7 @@
 *.pth
 *.tif
 *.tiff
+raster_declividade/*
 
 save_state/
 HYDRUS/
